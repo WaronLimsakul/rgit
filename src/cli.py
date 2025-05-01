@@ -18,8 +18,19 @@ def parse_args():
     init_parser = commands.add_parser("init") # this one is init parser
     init_parser.set_defaults(func=init) # just set the attribute name "func" to the init function
 
+    hash_object_parser = commands.add_parser("hash-object")
+    hash_object_parser.add_argument("file_path")
+    hash_object_parser.set_defaults(func=has_object)
+
     return parser.parse_args()
 
 def init(args):
     data.init()
     print(f"initialize rgit repo in {os.getcwd()}/{data.RGIT_DIR}")
+
+def hash_object(args):
+    with open(file_path, "rb") as file:
+        file_content = file.read()
+
+    oid = data.hash_object(file_content)
+    printf(f"hash object {args.file_path} -> {oid}")

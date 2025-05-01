@@ -2,21 +2,37 @@
 import os
 from . import data
 
-def write_tree(dir_path: str = ".") -> None:
+# the tree object is a hash of
+# type oid name
+# ...
+# of the files object inside
+def write_tree(dir_path: str = ".") -> str:
     # listdir will just give list of file name in dir
     # scandir will give list of file-like object I can directly call method on
     # but I have to close the list. so I will use with ... as ... to auto close
     with os.scandir(dir_path) as ls:
+        tree_content_list = [] # list of string
         for file in ls:
+            type = "blob"
             full_path = f"{dir_path}/{file.name}"
             if is_ignored(full_path):
                 continue
             elif file.is_file():
                 with open(full_path, 'rb') as f:
                     oid = data.hash_object(f.read())
-                print(f"obj: {full_path}, oid: {oid}")
             elif file.is_dir():
-                write_tree(full_path)
+                type = "tree"
+                oid = write_tree(full_path)
+
+            tree_content_list.append((type, oid, file.name))
+        tree_content = "".join(
+            f"{type} {oid} {file_name}\n"
+            for (type, oid, file_name)
+            in sorted(tree_content_list)
+        ).encode()
+        tree_oid = data.hash_object(tree_content, type="tree")
+        return tree_oid
+
 
 
 # now we will only ignore the .rgit (and .git since it's annoying) dir

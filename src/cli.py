@@ -64,4 +64,5 @@ def cat_file(args):
     sys.stdout.buffer.write(file_content)
 
 def write_tree(args):
-    base.write_tree()
+    tree_oid = base.write_tree()
+    print(tree_oid)

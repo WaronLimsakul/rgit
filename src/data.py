@@ -14,10 +14,10 @@ def clear():
     shutil.rmtree(RGIT_DIR)
 
 # get file content, hash it with object type, then put the content in .rgit/objects/<hash>
-def hash_object(file_content: bytes, type: str ="blob") -> str:
+def hash_object(file_content: bytes, type_: str ="blob") -> str:
 
     # prepend the type to the content
-    file_content = type.encode() + b"\0" + file_content
+    file_content = type_.encode() + b"\0" + file_content
     hasher = hashlib.sha1(file_content) # create hasher + put message to hash
     object_id = hasher.hexdigest() # hash
 
@@ -36,8 +36,8 @@ def get_object_content(oid: str, expected: str | None = "blob") -> bytes:
 
         # get the type first
         # this function divide bytes into 3 parts, before - first_sep - after
-        type, _, content = file.read().partition(b"\0")
-        type_str = type.decode()
+        type_, _, content = file.read().partition(b"\0")
+        type_str = type_.decode()
         if expected is not None:
             assert type_str == expected, f"Expected {expected} type, found {type_str}"
         return content

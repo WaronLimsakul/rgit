@@ -1,6 +1,7 @@
 # base module provide higher level implementation of data.py
 import os
 from . import data
+from typing import Dict, Iterator, Tuple
 
 # the tree object is a hash of
 # type oid name
@@ -13,7 +14,7 @@ def write_tree(dir_path: str = ".") -> str:
     with os.scandir(dir_path) as ls:
         tree_content_list = [] # list of string
         for file in ls:
-            type = "blob"
+            type_ = "blob" # have to add _ because it will conflict with keyword
             full_path = f"{dir_path}/{file.name}"
             if is_ignored(full_path):
                 continue
@@ -21,20 +22,78 @@ def write_tree(dir_path: str = ".") -> str:
                 with open(full_path, 'rb') as f:
                     oid = data.hash_object(f.read())
             elif file.is_dir():
-                type = "tree"
+                type_ = "tree"
                 oid = write_tree(full_path)
+            else:
+                raise TypeError(f"file {file.name} is neither file nor directory")
 
-            tree_content_list.append((type, oid, file.name))
+            tree_content_list.append((type_, oid, file.name))
         tree_content = "".join(
-            f"{type} {oid} {file_name}\n"
-            for (type, oid, file_name)
+            f"{type_} {oid} {file_name}\n"
+            for (type_, oid, file_name)
             in sorted(tree_content_list)
         ).encode()
-        tree_oid = data.hash_object(tree_content, type="tree")
+        tree_oid = data.hash_object(tree_content, type_="tree")
         return tree_oid
-
-
 
 # now we will only ignore the .rgit (and .git since it's annoying) dir
 def is_ignored(path: str) -> bool:
     return ".rgit" in path.split("/") or ".git" in path.split("/")
+
+# get oid -> go get each child in tree object and yield as tuple (type, oid, name)
+def _iter_tree_entries(oid: str) -> Iterator[Tuple[str, str, str]]:
+    if not oid:
+        return
+    tree_content_bytes = data.get_object_content(oid, expected="tree")
+    tree_content_lines = tree_content_bytes.decode().splitlines()
+    for line in tree_content_lines:
+        type_, oid, name = line.split(" ", 2)
+        yield (type_, oid, name)
+
+
+# get oid and opt base_path, put every blob inside the tree to dict: path -> oid
+def get_tree(oid: str, base_path: str = "") -> Dict[str, str]:
+    res = {}
+    for (child_type, child_oid, child_name) in _iter_tree_entries(oid):
+        assert "/" not in child_name
+        assert child_name not in (".", "..")
+        child_path = base_path + child_name # assume base_path has trailing /
+        if child_type == "blob":
+            res[child_path] = child_oid
+        elif child_type == "tree":
+            res.update(get_tree(child_oid, child_path + "/"))
+        else:
+            raise ValueError(f"child with oid {oid} has invalid type {child_type}")
+
+    return res
+
+# get the oid of a tree, then write cwd according to the tree it gets
+def read_tree(oid: str) -> None:
+    _empty_current_dir()
+    for (path, oid) in get_tree(oid, base_path="./").items():
+        os.makedirs(os.path.dirname, exist_ok=True)
+        with open(path, "wb") as obj:
+            obj.write(data.get_object_content(oid))
+
+
+# like name said, empty the current dir (ignore .rgit)
+# we call it before doing read_tree.
+def _empty_current_dir():
+    for (root, dirnames, filenames) in os.walk(".", topdown=False):
+        for filename in filenames:
+            path = os.path.relpath(f"{root}/{filename}")
+            if is_ignored(path) or not os.path.isfile(path):
+                continue
+            os.remove(path)
+
+        for dirname in dirnames:
+            path = os.path.relpath(f"{root}/{dirname}")
+            if is_ignored(path):
+                continue
+
+        try:
+            os.rmdir(path)
+        except (FileNotFoundError, OSError):
+            # some dir has ignored files, we can't delete the non-empty dir
+            # so we just pass
+            pass

@@ -42,7 +42,7 @@ def hash_object(args):
 
 def cat_file(args):
     # get file content in binary
-    file_content = data.get_object_content(args.oid)
+    file_content = data.get_object_content(args.oid, expected=None)
 
     # flush() tell system to send everything in buffer to stdout
     # (basically, empty the buffer)

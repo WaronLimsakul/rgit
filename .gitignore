@@ -1,3 +1,4 @@
 rgit.egg-info/
 .rgit/
+__pycache__/
 note.txt

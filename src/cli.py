@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 from . import data # if I want to import local lib, I have specify where it is
+from . import base
 
 def main():
     args = parse_args()
@@ -27,6 +28,9 @@ def parse_args():
     cat_file_parser.add_argument("oid")
     cat_file_parser.set_defaults(func=cat_file)
 
+    write_tree_parser = commands.add_parser("write-tree")
+    write_tree_parser.set_defaults(func=write_tree)
+
     return parser.parse_args()
 
 def init(args):
@@ -50,3 +54,6 @@ def cat_file(args):
     # so we use stdout to write binary because it is designed to do so
     # (while print(f"") will print b"content"\n)
     sys.stdout.buffer.write(file_content)
+
+def write_tree(args):
+    base.write_tree()

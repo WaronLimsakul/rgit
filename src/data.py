@@ -27,7 +27,7 @@ def hash_object(file_content: bytes, type="blob"):
 
 
 # get the oid and expected type, return if found + has expected type
-def get_object_content(oid: str, expected=None: str) -> str:
+def get_object_content(oid: str, expected: str = None) -> str:
     # read in binary mode
     with open(f"{OBJECTS_DIR}/{oid}", 'rb') as file:
 

@@ -1,1 +1,2 @@
-rgit.egg-info/*
+rgit.egg-info/
+__pycache__/

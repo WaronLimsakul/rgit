@@ -20,6 +20,10 @@ def parse_args():
     init_parser = commands.add_parser("init") # this one is init parser
     init_parser.set_defaults(func=init) # just set the attribute name "func" to the init function
 
+    # for only development
+    clear_parser = commands.add_parser("clear")
+    clear_parser.set_defaults(func=clear)
+
     hash_object_parser = commands.add_parser("hash-object")
     hash_object_parser.add_argument("file_path")
     hash_object_parser.set_defaults(func=hash_object)
@@ -36,6 +40,10 @@ def parse_args():
 def init(args):
     data.init()
     print(f"initialize rgit repo in {os.getcwd()}/{data.RGIT_DIR}")
+
+def clear(args):
+    data.clear()
+    print("clear .rgit directory")
 
 def hash_object(args):
     with open(args.file_path, "rb") as file:

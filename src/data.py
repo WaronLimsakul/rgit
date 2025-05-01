@@ -1,6 +1,7 @@
 import os
 import hashlib
 import sys
+import shutil
 
 RGIT_DIR = ".rgit"
 OBJECTS_DIR = f"{RGIT_DIR}/objects"
@@ -9,6 +10,8 @@ def init():
     os.makedirs(RGIT_DIR)
     os.makedirs(OBJECTS_DIR)
 
+def clear():
+    shutil.rmtree(RGIT_DIR)
 
 # get file content, hash it with object type, then put the content in .rgit/objects/<hash>
 def hash_object(file_content: bytes, type="blob"):

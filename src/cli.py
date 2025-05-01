@@ -1,6 +1,7 @@
 # lib for parsing cl argument into object that I can pick attribute from
 import argparse
 import os
+import sys
 from . import data # if I want to import local lib, I have specify where it is
 
 def main():
@@ -20,7 +21,11 @@ def parse_args():
 
     hash_object_parser = commands.add_parser("hash-object")
     hash_object_parser.add_argument("file_path")
-    hash_object_parser.set_defaults(func=has_object)
+    hash_object_parser.set_defaults(func=hash_object)
+
+    cat_file_parser = commands.add_parser("cat-file")
+    cat_file_parser.add_argument("oid")
+    cat_file_parser.set_defaults(func=cat_file)
 
     return parser.parse_args()
 
@@ -29,8 +34,19 @@ def init(args):
     print(f"initialize rgit repo in {os.getcwd()}/{data.RGIT_DIR}")
 
 def hash_object(args):
-    with open(file_path, "rb") as file:
+    with open(args.file_path, "rb") as file:
         file_content = file.read()
 
     oid = data.hash_object(file_content)
-    printf(f"hash object {args.file_path} -> {oid}")
+    print(f"hash object {args.file_path} -> {oid}")
+
+def cat_file(args):
+    # get file content in binary
+    file_content = data.get_object_content(args.oid)
+
+    # flush() tell system to send everything in buffer to stdout
+    # (basically, empty the buffer)
+    sys.stdout.flush()
+    # so we use stdout to write binary because it is designed to do so
+    # (while print(f"") will print b"content"\n)
+    sys.stdout.buffer.write(file_content)

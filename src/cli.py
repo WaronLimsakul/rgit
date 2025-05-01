@@ -1,5 +1,7 @@
 # lib for parsing cl argument into object that I can pick attribute from
 import argparse
+import os
+from . import data # if I want to import local lib, I have specify where it is
 
 def main():
     args = parse_args()
@@ -10,7 +12,7 @@ def parse_args():
 
     # We will add sub-parser for handling sub-command
     commands = parser.add_subparsers(dest="command")
-    commands.required = True
+    commands.required = True # force user to have command
 
     # this function take the command string, then return the parser we can modify
     init_parser = commands.add_parser("init") # this one is init parser
@@ -19,4 +21,5 @@ def parse_args():
     return parser.parse_args()
 
 def init(args):
-    print("Hello, world")
+    data.init()
+    print(f"initialize rgit repo in {os.getcwd()}/{data.RGIT_DIR}")

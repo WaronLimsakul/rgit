@@ -5,6 +5,7 @@ import shutil
 
 RGIT_DIR = ".rgit"
 OBJECTS_DIR = f"{RGIT_DIR}/objects"
+HEAD_FILE = f"{RGIT_DIR}/HEAD"
 
 def init():
     os.makedirs(RGIT_DIR)
@@ -41,3 +42,7 @@ def get_object_content(oid: str, expected: str | None = "blob") -> bytes:
         if expected is not None:
             assert type_str == expected, f"Expected {expected} type, found {type_str}"
         return content
+
+def set_head(oid :str) -> None:
+    with open(HEAD_FILE, "wb") as headfile:
+        headfile.write(oid.encode())

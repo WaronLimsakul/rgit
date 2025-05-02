@@ -108,4 +108,6 @@ def commit(message: str) -> str:
     commit_content += f"{message}\n"
 
     commit_oid = data.hash_object(commit_content.encode(), type_="commit")
+    data.set_head(commit_oid)
+
     return commit_oid

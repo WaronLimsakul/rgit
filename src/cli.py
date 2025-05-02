@@ -124,5 +124,6 @@ def checkout(args):
     print(f"checkout commit, now HEAD is {args.commit}")
 
 def tag(args):
+    # this means takes args.commit if available, else, takes head
     commit_oid = args.commit or data.get_head_hash()
-    base.create_tag(args.tag_name, args.commit)
+    base.create_tag(args.tag_name, commit_oid)

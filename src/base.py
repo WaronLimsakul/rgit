@@ -193,15 +193,15 @@ def get_oid(name: str) -> str:
     else:
         raise ValueError(f"couldn't get oid from name {name}")
 
-def get_iter_refs() -> Iterator[Tuple[str, str]]:
-    refs = ["HEAD"]
 
-    start_path = os.path.join(data.RGIT_DIR, "refs")
-    for root, _, filenames in os.walk(start_path):
-        # root form os.walk is absolute, but all our functionality need relative
-        root = os.path.relpath(root, data.RGIT_DIR)
-        for filename in filenames:
-            refs.append(os.path.join(root, filename))
+# Yield as many commit it can reach from oids
+def iter_commits_and_parents(oids: set[str]) -> Iterator[str]:
+    visited = set()
+    while oids:
+        oid = oids.pop()
+        if oid in visited: continue
+        visited.add(oid)
+        yield oid
 
-    for ref in refs:
-        yield (ref, data.get_ref_hash(ref))
+        commit = get_commit(oid)
+        if commit.parent: oids.add(commit.parent)

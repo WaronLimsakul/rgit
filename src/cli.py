@@ -130,5 +130,12 @@ def tag(args):
     print(f"create tag: {args.tag_name} for commit: {commit_oid}")
 
 def k(args):
-    for (ref, ref_hash) in data.get_refs_iterator():
+    oids = set()
+    for (ref, ref_hash) in data.iter_refs():
         print(f"ref: {ref} | hash: {ref_hash}")
+        oids.add(ref_hash)
+
+    for oid in base.iter_commits_and_parents(oids):
+        commit = base.get_commit(oid)
+        print(f"oid: {oid}")
+        if commit.parent: print(f"parent: {commit.parent}")

@@ -2,7 +2,7 @@ import os
 import hashlib
 import sys
 import shutil
-from typing import Iterator, Tuple
+from typing import Iterator, Tuple, Set
 
 RGIT_DIR = ".rgit"
 OBJECTS_DIR = f"{RGIT_DIR}/objects"
@@ -66,7 +66,7 @@ def get_ref_hash(ref: str) -> str:
     with open(target_path, "r") as reffile:
         return reffile.read().strip()
 
-def get_refs_iterator() -> Iterator[Tuple[str, str]]:
+def iter_refs() -> Iterator[Tuple[str, str]]:
     refs = ["HEAD"]
 
     start_path = os.path.join(RGIT_DIR, "refs")

@@ -46,6 +46,7 @@ def parse_args():
     commit_parser.set_defaults(func=commit)
 
     log_parser = commands.add_parser("log")
+    log_parser.add_argument("oid", nargs="?", default="HEAD")
     log_parser.set_defaults(func=log)
 
     return parser.parse_args()
@@ -96,9 +97,11 @@ def _print_commit_data(commit_oid, commit: base.Commit) -> None:
 
 
 def log(args):
-    head_oid = data.get_head_hash()
+    if args.oid != "HEAD":
+        commit_oid = args.oid
+    else:
+        commit_oid = data.get_head_hash()
 
-    commit_oid = head_oid
     while commit_oid:
         commit = base.get_commit(commit_oid)
         _print_commit_data(commit_oid, commit)

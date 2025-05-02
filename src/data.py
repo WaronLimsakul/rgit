@@ -2,6 +2,7 @@ import os
 import hashlib
 import sys
 import shutil
+from typing import Iterator, Tuple
 
 RGIT_DIR = ".rgit"
 OBJECTS_DIR = f"{RGIT_DIR}/objects"
@@ -64,3 +65,16 @@ def get_ref_hash(ref: str) -> str:
 
     with open(target_path, "r") as reffile:
         return reffile.read().strip()
+
+def get_refs_iterator() -> Iterator[Tuple[str, str]]:
+    refs = ["HEAD"]
+
+    start_path = os.path.join(RGIT_DIR, "refs")
+    for root, _, filenames in os.walk(start_path):
+        # root form os.walk is absolute, but all our functionality need relative
+        root = os.path.relpath(root, RGIT_DIR)
+        for filename in filenames:
+            refs.append(os.path.join(root, filename))
+
+    for ref in refs:
+        yield (ref, get_ref_hash(ref))

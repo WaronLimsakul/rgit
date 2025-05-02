@@ -61,6 +61,9 @@ def parse_args():
     tag_parser.add_argument("commit", nargs="?", type=oid, default="@")
     tag_parser.set_defaults(func=tag)
 
+    k_parser = commands.add_parser("k")
+    k_parser.set_defaults(func=k)
+
     return parser.parse_args()
 
 def init(args):
@@ -125,3 +128,7 @@ def tag(args):
     commit_oid = args.commit
     base.create_tag(args.tag_name, commit_oid)
     print(f"create tag: {args.tag_name} for commit: {commit_oid}")
+
+def k(args):
+    for (ref, ref_hash) in data.get_refs_iterator():
+        print(f"ref: {ref} | hash: {ref_hash}")

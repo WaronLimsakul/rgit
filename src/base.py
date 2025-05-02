@@ -192,3 +192,16 @@ def get_oid(name: str) -> str:
         return name
     else:
         raise ValueError(f"couldn't get oid from name {name}")
+
+def get_iter_refs() -> Iterator[Tuple[str, str]]:
+    refs = ["HEAD"]
+
+    start_path = os.path.join(data.RGIT_DIR, "refs")
+    for root, _, filenames in os.walk(start_path):
+        # root form os.walk is absolute, but all our functionality need relative
+        root = os.path.relpath(root, data.RGIT_DIR)
+        for filename in filenames:
+            refs.append(os.path.join(root, filename))
+
+    for ref in refs:
+        yield (ref, data.get_ref_hash(ref))

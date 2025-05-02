@@ -107,7 +107,7 @@ def commit(message: str) -> str:
     # TODO: have user and timestamp too
     commit_content = f"tree {tree_oid}\n"
 
-    parent_oid = data.get_head_hash()
+    parent_oid = data.get_ref_hash("HEAD")
     if parent_oid: # the first commit doesn't have parent ("")
         commit_content += f"parent {parent_oid}\n"
 
@@ -116,7 +116,7 @@ def commit(message: str) -> str:
 
 
     commit_oid = data.hash_object(commit_content.encode(), type_="commit")
-    data.set_head(commit_oid)
+    data.update_ref("HEAD", commit_oid)
 
     return commit_oid
 
@@ -160,7 +160,7 @@ def checkout(commit_oid: str) -> None:
     if not commit_data: return
 
     read_tree(commit_data.tree)
-    data.set_head(commit_oid)
+    data.update_ref("HEAD", commit_oid)
 
 def create_tag(tag_name: str, commit: str) -> None:
     print(f"tag-name: {tag_name} | commit: {commit}")

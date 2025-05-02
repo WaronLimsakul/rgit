@@ -11,12 +11,13 @@ def init():
     os.makedirs(RGIT_DIR)
     os.makedirs(OBJECTS_DIR)
 
+
 def clear():
     shutil.rmtree(RGIT_DIR)
 
+
 # get file content, hash it with object type, then put the content in .rgit/objects/<hash>
 def hash_object(file_content: bytes, type_: str ="blob") -> str:
-
     # prepend the type to the content
     file_content = type_.encode() + b"\0" + file_content
     hasher = hashlib.sha1(file_content) # create hasher + put message to hash
@@ -43,13 +44,24 @@ def get_object_content(oid: str, expected: str | None = "blob") -> bytes:
             assert type_str == expected, f"Expected {expected} type, found {type_str}"
         return content
 
-def set_head(oid :str) -> None:
-    with open(HEAD_FILE, "wb") as headfile:
-        headfile.write(oid.encode())
+
+def update_ref(ref: str, oid: str) -> None:
+    if not (ref and oid):
+        raise ValueError("need value for ref and commit")
+
+    target_path = f"{RGIT_DIR}/{ref}"
+    with open(target_path, "w") as reffile:
+        reffile.write(oid)
 
 
-def get_head_hash() -> str:
-    if not os.path.isfile(HEAD_FILE):
+# get the ref name find the hash of the commit in .rgit/ref
+def get_ref_hash(ref: str) -> str:
+    if not ref:
+        raise ValueError("need value for ref and string")
+
+    target_path = f"{RGIT_DIR}/{ref}"
+    if not os.path.isfile(target_path):
         return ""
-    with open(HEAD_FILE, "r") as headfile:
-        return headfile.read().strip() #strip trailing and leading space?
+
+    with open(target_path, "r") as reffile:
+        return reffile.read().strip()

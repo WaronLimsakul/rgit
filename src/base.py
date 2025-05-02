@@ -1,7 +1,9 @@
 # base module provide higher level implementation of data.py
 import os
+import itertools
 from . import data
 from typing import Dict, Iterator, Tuple
+from collections import namedtuple
 
 # the tree object is a hash of
 # type oid name
@@ -117,3 +119,34 @@ def commit(message: str) -> str:
     data.set_head(commit_oid)
 
     return commit_oid
+
+
+# a lazy way to define a class with just attributes
+Commit = namedtuple("Commit", ["tree", "parent", "message"])
+
+# get the oid of the commit, parse the data then return
+# the Commit object (explicit fields, better than normal dict)
+def get_commit(oid: str) -> Commit:
+    if not oid:
+        return None
+    commit_content = data.get_object_content(oid, expected="commit")
+    tree, parent = "", ""
+
+    # iter takes a list and return iterator, an object you can call next() to
+    # get the next thing. + there is lib called itertools for loop this class
+    lines = iter(commit_content.decode().splitlines())
+
+    # takewhile(predicate, iterator) will get next() thing until predicate
+    # return False on the current one. so I use it to just check empty line
+    for line in itertools.takewhile(bool, lines):
+        key, value = line.split(" ", 1)
+        if key == "tree":
+            tree = value
+        elif key == "parent":
+            parent = value
+        else:
+            raise ValueError(f"unknown field {key}")
+
+    message = "\n".join(lines) # the lines left are just message
+
+    return Commit(tree=tree, parent=parent, message=message)

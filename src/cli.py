@@ -2,6 +2,8 @@
 import argparse
 import os
 import sys
+import textwrap # lib for wrapping multi-line string
+from typing import Dict
 from . import data # if I want to import local lib, I have specify where it is
 from . import base
 
@@ -43,6 +45,9 @@ def parse_args():
     commit_parser.add_argument("--message", "-m", required=True)
     commit_parser.set_defaults(func=commit)
 
+    log_parser = commands.add_parser("log")
+    log_parser.set_defaults(func=log)
+
     return parser.parse_args()
 
 def init(args):
@@ -81,3 +86,20 @@ def read_tree(args):
 def commit(args):
     version_oid = base.commit(args.message)
     print(f"commit {version_oid}")
+
+def _print_commit_data(commit_oid, commit: base.Commit) -> None:
+    print(f"commit {commit_oid}\n")
+
+    # .indent(<string>, prefix) will add prefix to everyline in the <string>
+    print(textwrap.indent(commit.message, "    "))
+    print()
+
+
+def log(args):
+    head_oid = data.get_head_hash()
+
+    commit_oid = head_oid
+    while commit_oid:
+        commit = base.get_commit(commit_oid)
+        _print_commit_data(commit_oid, commit)
+        commit_oid = commit.parent

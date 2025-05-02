@@ -1,7 +1,7 @@
 # base module provide higher level implementation of data.py
 import os
-import re
 import itertools
+import string
 from src import data
 from typing import Dict, Iterator, Tuple
 from collections import namedtuple
@@ -168,17 +168,25 @@ def checkout(commit_oid: str) -> None:
 def create_tag(tag: str, commit: str) -> None:
     data.update_ref(f"refs/tags/{tag}", commit)
 
+
 # check if the name is from SHA1 hash
 def _is_hash(name: str) -> bool:
-    return len(name) == 40 and bool(re.fullmatch(r'^[0-9a-fA-F]+$', name))
+    return len(name) == 40 and all(ch in string.hexdigits for ch in name)
+
 
 # receive a name (either ref or oid), if it's not ref hash, then we
 # assume it is oid so we return right away
 def get_oid(name: str) -> str:
-    found_hash = data.get_ref_hash(name)
+    # try to get from ref first.
+    found_hash = (
+        data.get_ref_hash(name) or
+        data.get_ref_hash(f"refs/{name}") or
+        data.get_ref_hash(f"refs/tags/{name}") or
+        data.get_ref_hash(f"refs/heads/{name}")
+    )
     if found_hash:
         return found_hash
-    elif _is_hash(name):
+    elif _is_hash(name): #  this means the name is already oid
         return name
     else:
         raise ValueError(f"couldn't get oid from name {name}")

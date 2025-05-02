@@ -46,3 +46,10 @@ def get_object_content(oid: str, expected: str | None = "blob") -> bytes:
 def set_head(oid :str) -> None:
     with open(HEAD_FILE, "wb") as headfile:
         headfile.write(oid.encode())
+
+
+def get_head_hash() -> str:
+    if not os.path.isfile(HEAD_FILE):
+        return ""
+    with open(HEAD_FILE, "r") as headfile:
+        return headfile.read().strip() #strip trailing and leading space?

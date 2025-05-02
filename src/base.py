@@ -104,8 +104,14 @@ def commit(message: str) -> str:
 
     # TODO: have user and timestamp too
     commit_content = f"tree {tree_oid}\n"
+
+    parent_oid = data.get_head_hash()
+    if parent_oid: # the first commit doesn't have parent ("")
+        commit_content += f"parent {parent_oid}\n"
+
     commit_content += "\n"
     commit_content += f"{message}\n"
+
 
     commit_oid = data.hash_object(commit_content.encode(), type_="commit")
     data.set_head(commit_oid)

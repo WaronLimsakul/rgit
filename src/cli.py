@@ -48,7 +48,7 @@ def parse_args():
 
     log_parser = commands.add_parser("log")
     # takes one value to be oid, if not, just use default
-    log_parser.add_argument("oid", type=oid, nargs="?")
+    log_parser.add_argument("oid", type=oid, nargs="?", default="@")
     log_parser.set_defaults(func=log)
 
     checkout_parser = commands.add_parser("checkout")
@@ -58,7 +58,7 @@ def parse_args():
     tag_parser = commands.add_parser("tag")
     tag_parser.add_argument("tag_name")
     # nargs="?" means optional argument, if not provided: just None
-    tag_parser.add_argument("commit", nargs="?", type=oid)
+    tag_parser.add_argument("commit", nargs="?", type=oid, default="@")
     tag_parser.set_defaults(func=tag)
 
     return parser.parse_args()
@@ -109,7 +109,7 @@ def _print_commit_data(commit_oid, commit: base.Commit) -> None:
 
 
 def log(args):
-    commit_oid = args.oid or data.get_ref_hash("HEAD")
+    commit_oid = args.oid
 
     while commit_oid:
         commit = base.get_commit(commit_oid)
@@ -122,7 +122,6 @@ def checkout(args):
     print(f"checkout commit, now HEAD is {args.commit}")
 
 def tag(args):
-    # this means takes args.commit if available, else, takes head
-    commit_oid = args.commit or data.get_ref_hash("HEAD")
+    commit_oid = args.commit
     base.create_tag(args.tag_name, commit_oid)
     print(f"create tag: {args.tag_name} for commit: {commit_oid}")

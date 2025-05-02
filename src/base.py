@@ -177,6 +177,8 @@ def _is_hash(name: str) -> bool:
 # receive a name (either ref or oid), if it's not ref hash, then we
 # assume it is oid so we return right away
 def get_oid(name: str) -> str:
+    # "@" is an alias for HEAD
+    if name == "@": name = "HEAD"
     # try to get from ref first.
     found_hash = (
         data.get_ref_hash(name) or

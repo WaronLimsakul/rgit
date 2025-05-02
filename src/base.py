@@ -97,3 +97,15 @@ def _empty_current_dir():
             # some dir has ignored files, we can't delete the non-empty dir
             # so we just pass
             pass
+
+# get message, write tree then hash the commit object
+def commit(message: str) -> str:
+    tree_oid = write_tree()
+
+    # TODO: have user and timestamp too
+    commit_content = f"tree {tree_oid}\n"
+    commit_content += "\n"
+    commit_content += f"{message}\n"
+
+    commit_oid = data.hash_object(commit_content.encode(), type_="commit")
+    return commit_oid

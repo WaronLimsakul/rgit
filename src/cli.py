@@ -39,6 +39,10 @@ def parse_args():
     read_tree_parser.add_argument("oid")
     read_tree_parser.set_defaults(func=read_tree)
 
+    commit_parser = commands.add_parser("commit")
+    commit_parser.add_argument("--message", "-m", required=True)
+    commit_parser.set_defaults(func=commit)
+
     return parser.parse_args()
 
 def init(args):
@@ -73,3 +77,7 @@ def write_tree(args):
 
 def read_tree(args):
     base.read_tree(args.oid)
+
+def commit(args):
+    version_oid = base.commit(args.message)
+    print(f"commit {version_oid}")

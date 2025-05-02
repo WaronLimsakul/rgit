@@ -73,7 +73,7 @@ def get_tree(oid: str, base_path: str = "") -> Dict[str, str]:
 def read_tree(oid: str) -> None:
     _empty_current_dir()
     for (path, oid) in get_tree(oid, base_path="./").items():
-        os.makedirs(os.path.dirname, exist_ok=True)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "wb") as obj:
             obj.write(data.get_object_content(oid))
 

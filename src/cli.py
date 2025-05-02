@@ -46,6 +46,7 @@ def parse_args():
     commit_parser.set_defaults(func=commit)
 
     log_parser = commands.add_parser("log")
+    # takes one value to be oid, if not, just use default
     log_parser.add_argument("oid", nargs="?", default="HEAD")
     log_parser.set_defaults(func=log)
 

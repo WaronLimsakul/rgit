@@ -4,8 +4,8 @@ import os
 import sys
 import textwrap # lib for wrapping multi-line string
 from typing import Dict
-from . import data # if I want to import local lib, I have specify where it is
-from . import base
+from src import data # if I want to import local lib, I have specify where it is
+from src import base
 
 def main():
     args = parse_args()
@@ -53,6 +53,12 @@ def parse_args():
     checkout_parser = commands.add_parser("checkout")
     checkout_parser.add_argument("commit")
     checkout_parser.set_defaults(func=checkout)
+
+    tag_parser = commands.add_parser("tag")
+    tag_parser.add_argument("tag_name")
+    # nargs="?" means optional argument, if not provided: just None
+    tag_parser.add_argument("commit", nargs="?")
+    tag_parser.set_defaults(func=tag)
 
     return parser.parse_args()
 
@@ -116,3 +122,7 @@ def log(args):
 def checkout(args):
     base.checkout(args.commit)
     print(f"checkout commit, now HEAD is {args.commit}")
+
+def tag(args):
+    commit_oid = args.commit or data.get_head_hash()
+    base.create_tag(args.tag_name, args.commit)

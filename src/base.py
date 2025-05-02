@@ -1,7 +1,7 @@
 # base module provide higher level implementation of data.py
 import os
 import itertools
-from . import data
+from src import data
 from typing import Dict, Iterator, Tuple
 from collections import namedtuple
 
@@ -126,7 +126,7 @@ Commit = namedtuple("Commit", ["tree", "parent", "message"])
 
 # get the oid of the commit, parse the data then return
 # the Commit object (explicit fields, better than normal dict)
-def get_commit(oid: str) -> Commit:
+def get_commit(oid: str) -> Commit | None:
     if not oid:
         return None
     commit_content = data.get_object_content(oid, expected="commit")
@@ -157,5 +157,10 @@ def checkout(commit_oid: str) -> None:
         raise ValueError(f"checkout faile: commit {commit_oid} doesn't exist")
 
     commit_data = get_commit(commit_oid)
+    if not commit_data: return
+
     read_tree(commit_data.tree)
     data.set_head(commit_oid)
+
+def create_tag(tag_name: str, commit: str) -> None:
+    print(f"tag-name: {tag_name} | commit: {commit}")

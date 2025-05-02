@@ -1,4 +1,6 @@
 rgit.egg-info/
 .rgit/
 __pycache__/
-note.txt
+note.md
+venv/
+.mypy_cache/

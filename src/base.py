@@ -150,3 +150,12 @@ def get_commit(oid: str) -> Commit:
     message = "\n".join(lines) # the lines left are just message
 
     return Commit(tree=tree, parent=parent, message=message)
+
+# read tree using commit_oid and set the head to that ID
+def checkout(commit_oid: str) -> None:
+    if not os.path.exists(f"{data.OBJECTS_DIR}/{commit_oid}"):
+        raise ValueError(f"checkout faile: commit {commit_oid} doesn't exist")
+
+    commit_data = get_commit(commit_oid)
+    read_tree(commit_data.tree)
+    data.set_head(commit_oid)

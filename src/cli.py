@@ -50,6 +50,10 @@ def parse_args():
     log_parser.add_argument("oid", nargs="?", default="HEAD")
     log_parser.set_defaults(func=log)
 
+    checkout_parser = commands.add_parser("checkout")
+    checkout_parser.add_argument("commit")
+    checkout_parser.set_defaults(func=checkout)
+
     return parser.parse_args()
 
 def init(args):
@@ -107,3 +111,8 @@ def log(args):
         commit = base.get_commit(commit_oid)
         _print_commit_data(commit_oid, commit)
         commit_oid = commit.parent
+
+
+def checkout(args):
+    base.checkout(args.commit)
+    print(f"checkout commit, now HEAD is {args.commit}")

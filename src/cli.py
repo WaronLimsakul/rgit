@@ -13,6 +13,7 @@ def main():
 
 def parse_args():
     parser = argparse.ArgumentParser() # parser object
+    oid = base.get_oid # a caster function they count as a type
 
     # We will add sub-parser for handling sub-command
     commands = parser.add_subparsers(dest="command")
@@ -31,14 +32,14 @@ def parse_args():
     hash_object_parser.set_defaults(func=hash_object)
 
     cat_file_parser = commands.add_parser("cat-file")
-    cat_file_parser.add_argument("oid")
+    cat_file_parser.add_argument("oid", type=oid)
     cat_file_parser.set_defaults(func=cat_file)
 
     write_tree_parser = commands.add_parser("write-tree")
     write_tree_parser.set_defaults(func=write_tree)
 
     read_tree_parser = commands.add_parser("read-tree")
-    read_tree_parser.add_argument("oid")
+    read_tree_parser.add_argument("oid", type=oid)
     read_tree_parser.set_defaults(func=read_tree)
 
     commit_parser = commands.add_parser("commit")
@@ -47,17 +48,17 @@ def parse_args():
 
     log_parser = commands.add_parser("log")
     # takes one value to be oid, if not, just use default
-    log_parser.add_argument("oid", nargs="?", default="HEAD")
+    log_parser.add_argument("oid", type=oid, nargs="?")
     log_parser.set_defaults(func=log)
 
     checkout_parser = commands.add_parser("checkout")
-    checkout_parser.add_argument("commit")
+    checkout_parser.add_argument("commit", type=oid)
     checkout_parser.set_defaults(func=checkout)
 
     tag_parser = commands.add_parser("tag")
     tag_parser.add_argument("tag_name")
     # nargs="?" means optional argument, if not provided: just None
-    tag_parser.add_argument("commit", nargs="?")
+    tag_parser.add_argument("commit", nargs="?", type=oid)
     tag_parser.set_defaults(func=tag)
 
     return parser.parse_args()
@@ -102,16 +103,13 @@ def commit(args):
 def _print_commit_data(commit_oid, commit: base.Commit) -> None:
     print(f"commit {commit_oid}\n")
 
-    # .indent(<string>, prefix) will add prefix to everyline in the <string>
+    # .indent(<string>, prefix) will add prefix to every line in the <string>
     print(textwrap.indent(commit.message, "    "))
     print()
 
 
 def log(args):
-    if args.oid != "HEAD":
-        commit_oid = args.oid
-    else:
-        commit_oid = data.get_ref_hash("HEAD")
+    commit_oid = args.oid or data.get_ref_hash("HEAD")
 
     while commit_oid:
         commit = base.get_commit(commit_oid)

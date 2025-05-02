@@ -58,9 +58,6 @@ def update_ref(ref: str, oid: str) -> None:
 
 # get the ref name find the hash of the commit in .rgit/ref
 def get_ref_hash(ref: str) -> str:
-    if not ref:
-        raise ValueError("need value for ref and string")
-
     target_path = os.path.join(RGIT_DIR, ref)
     if not os.path.isfile(target_path):
         return ""

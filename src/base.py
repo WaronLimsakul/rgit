@@ -1,5 +1,6 @@
 # base module provide higher level implementation of data.py
 import os
+import re
 import itertools
 from src import data
 from typing import Dict, Iterator, Tuple
@@ -162,6 +163,22 @@ def checkout(commit_oid: str) -> None:
     read_tree(commit_data.tree)
     data.update_ref("HEAD", commit_oid)
 
+
 # use update_ref to create tag.
 def create_tag(tag: str, commit: str) -> None:
     data.update_ref(f"refs/tags/{tag}", commit)
+
+# check if the name is from SHA1 hash
+def _is_hash(name: str) -> bool:
+    return len(name) == 40 and bool(re.fullmatch(r'^[0-9a-fA-F]+$', name))
+
+# receive a name (either ref or oid), if it's not ref hash, then we
+# assume it is oid so we return right away
+def get_oid(name: str) -> str:
+    found_hash = data.get_ref_hash(name)
+    if found_hash:
+        return found_hash
+    elif _is_hash(name):
+        return name
+    else:
+        raise ValueError(f"couldn't get oid from name {name}")

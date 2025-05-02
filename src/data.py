@@ -49,7 +49,9 @@ def update_ref(ref: str, oid: str) -> None:
     if not (ref and oid):
         raise ValueError("need value for ref and commit")
 
-    target_path = f"{RGIT_DIR}/{ref}"
+    target_path = os.path.join(RGIT_DIR, ref)
+    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+
     with open(target_path, "w") as reffile:
         reffile.write(oid)
 
@@ -59,7 +61,7 @@ def get_ref_hash(ref: str) -> str:
     if not ref:
         raise ValueError("need value for ref and string")
 
-    target_path = f"{RGIT_DIR}/{ref}"
+    target_path = os.path.join(RGIT_DIR, ref)
     if not os.path.isfile(target_path):
         return ""
 

@@ -162,5 +162,6 @@ def checkout(commit_oid: str) -> None:
     read_tree(commit_data.tree)
     data.update_ref("HEAD", commit_oid)
 
-def create_tag(tag_name: str, commit: str) -> None:
-    print(f"tag-name: {tag_name} | commit: {commit}")
+# use update_ref to create tag.
+def create_tag(tag: str, commit: str) -> None:
+    data.update_ref(f"refs/tags/{tag}", commit)

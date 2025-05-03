@@ -8,6 +8,7 @@ from collections import namedtuple
 RGIT_DIR = ".rgit"
 OBJECTS_DIR = f"{RGIT_DIR}/objects"
 HEAD_FILE = f"{RGIT_DIR}/HEAD"
+SYMREF_PREFIX = "ref: "
 
 # a quick way to write a class with only attributes
 RefValue = namedtuple("RefValue", ["symbolic", "value"])
@@ -50,27 +51,35 @@ def get_object_content(oid: str, expected: str | None = "blob") -> bytes:
         return content
 
 
-def _get_ref_internal(ref: str) -> Tuple[str, RefValue]:
+# get ref name and trace it back until the non-symbolic ref. Return that ref and the value
+# use deref = False if just want to get value of exact ref
+def _get_ref_internal(ref: str, deref: bool = True) -> Tuple[str, RefValue]:
     target_path = os.path.join(RGIT_DIR, ref)
-    if os.path.isfile(target_path): # return zero value if file doesn't exist
+    if not os.path.isfile(target_path): # return zero value if file doesn't exist
         return ("", RefValue(symbolic=False, value=""))
 
     with open(target_path, "r") as reffile:
-        ref_content = reffile.read()
+        ref_content = reffile.read().strip()
 
-    # 2 cases here: the content is hash -> return / another ref (ref: <ref-name>) -> recur
-    symref_prefix = "ref: "
-    if ref_content.startswith(symref_prefix):
-        return _get_ref_internal(ref_content.removeprefix(symref_prefix))
+    # content has 2 cases here: the content is hash / another ref (ref: <ref-name>)
+    symbolic = ref_content.startswith(SYMREF_PREFIX)
 
-    return (ref, RefValue(symbolic=False, value=ref_content))
+    if symbolic: # update to cut prefix if possible
+        ref_content = ref_content.removeprefix(SYMREF_PREFIX)
+
+    # if deref + symbolic => trace back
+    if symbolic and deref:
+        return _get_ref_internal(ref=ref_content, deref=True)
+
+    # if not deref or not symbolic (have oid) => return right away
+    return (ref, RefValue(symbolic=symbolic, value=ref_content))
 
 
-def update_ref(ref: str, ref_value: RefValue) -> None:
+def update_ref(ref: str, ref_value: RefValue, deref: bool = True) -> None:
     if ref_value.symbolic:
         raise ValueError("at update_ref: need normal ref, found symbolic")
 
-    ref = _get_ref_internal(ref)[0] # trace back until the non-symbolic ref
+    ref = _get_ref_internal(ref, deref)[0] # trace back until the non-symbolic ref
     if not ref: return
 
     target_path = os.path.join(RGIT_DIR, ref)
@@ -80,16 +89,18 @@ def update_ref(ref: str, ref_value: RefValue) -> None:
         reffile.write(ref_value.value)
 
 
-# get the ref name find the hash of the commit in .rgit/ref
-def get_ref_hash(ref: str) -> RefValue | None:
-    last_ref, value = _get_ref_internal(ref)
-    if not last_ref: # last_ref is "" if cannot find
+# get the ref name find the value of the ref in .rgit/
+def get_ref_value(ref: str, deref: bool = True) -> RefValue | None:
+    last_ref, value = _get_ref_internal(ref, deref=deref)
+    if not last_ref: # last_ref is "" if cannot find the value
         return None
 
     return value
 
 
-def iter_refs() -> Iterator[Tuple[str, RefValue]]:
+# iterate every refs inside .rgit/
+# choose deref = False to get value of symbolic ref
+def iter_refs(deref: bool = True) -> Iterator[Tuple[str, RefValue]]:
     refs = ["HEAD"]
 
     start_path = os.path.join(RGIT_DIR, "refs")
@@ -100,7 +111,6 @@ def iter_refs() -> Iterator[Tuple[str, RefValue]]:
             refs.append(os.path.join(root, filename))
 
     for ref in refs:
-        ref_hash = get_ref_hash(ref)
+        ref_hash = get_ref_value(ref, deref=deref)
         if not ref_hash: continue
-
         yield (ref, ref_hash)

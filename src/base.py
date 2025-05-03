@@ -108,7 +108,7 @@ def commit(message: str) -> str:
     # TODO: have user and timestamp too
     commit_content = f"tree {tree_oid}\n"
 
-    parent_oid = data.get_ref_hash("HEAD")
+    parent_oid = data.get_ref_value("HEAD")
     if parent_oid: # the first commit doesn't have parent ("")
         commit_content += f"parent {parent_oid.value}\n"
 
@@ -181,10 +181,10 @@ def get_oid(name: str) -> str:
     if name == "@": name = "HEAD"
     # try to get from ref first.
     found_hash = (
-        data.get_ref_hash(name) or
-        data.get_ref_hash(f"refs/{name}") or
-        data.get_ref_hash(f"refs/tags/{name}") or
-        data.get_ref_hash(f"refs/heads/{name}")
+        data.get_ref_value(name) or
+        data.get_ref_value(f"refs/{name}") or
+        data.get_ref_value(f"refs/tags/{name}") or
+        data.get_ref_value(f"refs/heads/{name}")
     )
     if found_hash:
         return found_hash.value # sure that it is not symbolic

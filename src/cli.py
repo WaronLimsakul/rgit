@@ -140,16 +140,19 @@ def k(args):
 
     dot = 'digraph "commits" {\n'
     oids = set()
-    for (ref, ref_hash) in data.iter_refs():
+    for (ref, ref_value) in data.iter_refs(deref=False):
+        print(f"ref: {ref} | symbolic: {ref_value.symbolic} | value: {ref_value.value}")
         dot += f'"{ref}" [shape=note style=filled color=salmon2];\n'
-        dot += f'"{ref}" -> "{ref_hash.value}";\n'
-        oids.add(ref_hash.value)
+        dot += f'"{ref}" -> "{ref_value.value}";\n'
+        if not ref_value.symbolic: # we want only oid from what we found
+            oids.add(ref_value.value)
 
     for oid in base.iter_commits_and_parents(oids):
         commit = base.get_commit(oid)
         dot += f'"{oid}" [style=filled label="{oid[:10]}" color=darkolivegreen3];\n'
         if commit.parent:
             dot += f'"{oid}" -> "{commit.parent}";\n'
+
     dot += "}"
     print(dot)
 

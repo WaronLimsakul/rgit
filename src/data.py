@@ -3,10 +3,14 @@ import hashlib
 import sys
 import shutil
 from typing import Iterator, Tuple, Set
+from collections import namedtuple
 
 RGIT_DIR = ".rgit"
 OBJECTS_DIR = f"{RGIT_DIR}/objects"
 HEAD_FILE = f"{RGIT_DIR}/HEAD"
+
+# a quick way to write a class with only attributes
+RefValue = namedtuple("RefValue", ["symbolic", "value"])
 
 def init():
     os.makedirs(RGIT_DIR)
@@ -46,22 +50,22 @@ def get_object_content(oid: str, expected: str | None = "blob") -> bytes:
         return content
 
 
-def update_ref(ref: str, oid: str) -> None:
-    if not (ref and oid):
-        raise ValueError("need value for ref and commit")
+def update_ref(ref: str, ref_value: RefValue) -> None:
+    if ref_value.symbolic:
+        raise ValueError("at update_ref: need normal ref, found symbolic")
 
     target_path = os.path.join(RGIT_DIR, ref)
     os.makedirs(os.path.dirname(target_path), exist_ok=True)
 
     with open(target_path, "w") as reffile:
-        reffile.write(oid)
+        reffile.write(ref_value.value)
 
 
 # get the ref name find the hash of the commit in .rgit/ref
-def get_ref_hash(ref: str) -> str:
+def get_ref_hash(ref: str) -> RefValue | None:
     target_path = os.path.join(RGIT_DIR, ref)
     if not os.path.isfile(target_path):
-        return ""
+        return None
 
     with open(target_path, "r") as reffile:
         ref_content = reffile.read().strip()
@@ -71,10 +75,10 @@ def get_ref_hash(ref: str) -> str:
     if ref_content.startswith(symref_prefix):
         return get_ref_hash(ref_content.removeprefix(symref_prefix))
 
-    return ref_content
+    return RefValue(symbolic=False, value=ref_content)
 
 
-def iter_refs() -> Iterator[Tuple[str, str]]:
+def iter_refs() -> Iterator[Tuple[str, RefValue]]:
     refs = ["HEAD"]
 
     start_path = os.path.join(RGIT_DIR, "refs")
@@ -85,4 +89,7 @@ def iter_refs() -> Iterator[Tuple[str, str]]:
             refs.append(os.path.join(root, filename))
 
     for ref in refs:
-        yield (ref, get_ref_hash(ref))
+        ref_hash = get_ref_hash(ref)
+        if not ref_hash: continue
+
+        yield (ref, ref_hash)

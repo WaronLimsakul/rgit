@@ -110,14 +110,14 @@ def commit(message: str) -> str:
 
     parent_oid = data.get_ref_hash("HEAD")
     if parent_oid: # the first commit doesn't have parent ("")
-        commit_content += f"parent {parent_oid}\n"
+        commit_content += f"parent {parent_oid.value}\n"
 
     commit_content += "\n"
     commit_content += f"{message}\n"
 
 
     commit_oid = data.hash_object(commit_content.encode(), type_="commit")
-    data.update_ref("HEAD", commit_oid)
+    data.update_ref("HEAD", data.RefValue(symbolic=False, value=commit_oid))
 
     return commit_oid
 
@@ -161,12 +161,12 @@ def checkout(commit_oid: str) -> None:
     if not commit_data: return
 
     read_tree(commit_data.tree)
-    data.update_ref("HEAD", commit_oid)
+    data.update_ref("HEAD", data.RefValue(symbolic=False, value=commit_oid))
 
 
 # use update_ref to create tag.
 def create_tag(tag: str, commit: str) -> None:
-    data.update_ref(f"refs/tags/{tag}", commit)
+    data.update_ref(f"refs/tags/{tag}", data.RefValue(symbolic=False, value=commit))
 
 
 # check if the name is from SHA1 hash
@@ -187,7 +187,7 @@ def get_oid(name: str) -> str:
         data.get_ref_hash(f"refs/heads/{name}")
     )
     if found_hash:
-        return found_hash
+        return found_hash.value # sure that it is not symbolic
     elif _is_hash(name): #  this means the name is already oid
         return name
     else:
@@ -213,4 +213,4 @@ def iter_commits_and_parents(commit_oids: set[str]) -> Iterator[str]:
 
 def create_branch(branch_name: str, start_commit: str) -> None:
     branch_path = os.path.join("refs", "heads", branch_name)
-    data.update_ref(branch_path, start_commit)
+    data.update_ref(branch_path, data.RefValue(symbolic=False, value=start_commit))

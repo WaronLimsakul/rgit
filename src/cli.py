@@ -142,8 +142,8 @@ def k(args):
     oids = set()
     for (ref, ref_hash) in data.iter_refs():
         dot += f'"{ref}" [shape=note style=filled color=salmon2];\n'
-        dot += f'"{ref}" -> "{ref_hash}";\n'
-        oids.add(ref_hash)
+        dot += f'"{ref}" -> "{ref_hash.value}";\n'
+        oids.add(ref_hash.value)
 
     for oid in base.iter_commits_and_parents(oids):
         commit = base.get_commit(oid)

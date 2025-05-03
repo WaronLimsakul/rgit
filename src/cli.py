@@ -115,10 +115,9 @@ def _print_commit_data(commit_oid, commit: base.Commit) -> None:
 def log(args):
     commit_oid = args.oid
 
-    while commit_oid:
+    for commit_oid in base.iter_commits_and_parents({commit_oid}):
         commit = base.get_commit(commit_oid)
         _print_commit_data(commit_oid, commit)
-        commit_oid = commit.parent
 
 
 def checkout(args):

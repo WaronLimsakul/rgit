@@ -4,7 +4,7 @@ import itertools
 import string
 from src import data
 from typing import Dict, Iterator, Tuple
-from collections import namedtuple
+from collections import namedtuple, deque
 
 # the tree object is a hash of
 # type oid name
@@ -194,11 +194,12 @@ def get_oid(name: str) -> str:
         raise ValueError(f"couldn't get oid from name {name}")
 
 
-# Yield as many commit it can reach from oids
-def iter_commits_and_parents(oids: set[str]) -> Iterator[str]:
+# Yield as many commit it can reach from commit oids
+def iter_commits_and_parents(commit_oids: set[str]) -> Iterator[str]:
+    oids_queue = deque(commit_oids)
     visited = set()
-    while oids:
-        oid = oids.pop()
+    while oids_queue:
+        oid = oids_queue.popleft()
         if oid in visited: continue
         visited.add(oid)
         yield oid
@@ -207,4 +208,4 @@ def iter_commits_and_parents(oids: set[str]) -> Iterator[str]:
         if not commit:
             continue
         elif commit.parent:
-            oids.add(commit.parent)
+            oids_queue.appendleft(commit.parent)

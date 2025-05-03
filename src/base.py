@@ -180,7 +180,7 @@ def get_oid(name: str) -> str:
     # "@" is an alias for HEAD
     if name == "@": name = "HEAD"
     # try to get from ref first.
-    found_hash = (
+    found_hash = ( # might be deref=False?
         data.get_ref_value(name) or
         data.get_ref_value(f"refs/{name}") or
         data.get_ref_value(f"refs/tags/{name}") or

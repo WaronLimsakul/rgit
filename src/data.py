@@ -53,10 +53,10 @@ def get_object_content(oid: str, expected: str | None = "blob") -> bytes:
 
 # get ref name and trace it back until the non-symbolic ref. Return that ref and the value
 # use deref = False if just want to get value of exact ref
-def _get_ref_internal(ref: str, deref: bool = True) -> Tuple[str, RefValue]:
+def _get_ref_internal(ref: str, deref: bool = True) -> Tuple[str, RefValue | None]:
     target_path = os.path.join(RGIT_DIR, ref)
     if not os.path.isfile(target_path): # return zero value if file doesn't exist
-        return ("", RefValue(symbolic=False, value=""))
+        return (ref, None)
 
     with open(target_path, "r") as reffile:
         ref_content = reffile.read().strip()
@@ -75,26 +75,26 @@ def _get_ref_internal(ref: str, deref: bool = True) -> Tuple[str, RefValue]:
     return (ref, RefValue(symbolic=symbolic, value=ref_content))
 
 
+# takes ref address and value, (optional deref) then update
 def update_ref(ref: str, ref_value: RefValue, deref: bool = True) -> None:
-    if ref_value.symbolic:
-        raise ValueError("at update_ref: need normal ref, found symbolic")
-
-    ref = _get_ref_internal(ref, deref)[0] # trace back until the non-symbolic ref
-    if not ref: return
+    ref, _ = _get_ref_internal(ref, deref) # reset the ref to where we will update
+    # don't have to check the second value, because sometimes we want to create
 
     target_path = os.path.join(RGIT_DIR, ref)
     os.makedirs(os.path.dirname(target_path), exist_ok=True)
 
+    if ref_value.symbolic: # prepare before writing
+        updated_value = SYMREF_PREFIX + ref_value.value
+    else:
+        update_value = ref_value.value
+
     with open(target_path, "w") as reffile:
-        reffile.write(ref_value.value)
+        reffile.write(updated_value)
 
 
 # get the ref name find the value of the ref in .rgit/
 def get_ref_value(ref: str, deref: bool = True) -> RefValue | None:
-    last_ref, value = _get_ref_internal(ref, deref=deref)
-    if not last_ref: # last_ref is "" if cannot find the value
-        return None
-
+    _, value = _get_ref_internal(ref, deref=deref)
     return value
 
 

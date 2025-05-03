@@ -72,13 +72,16 @@ def parse_args():
 
     return parser.parse_args()
 
+
 def init(args):
     data.init()
     print(f"initialize rgit repo in {os.getcwd()}/{data.RGIT_DIR}")
 
+
 def clear(args):
     data.clear()
     print("clear .rgit directory")
+
 
 def hash_object(args):
     with open(args.file_path, "rb") as file:
@@ -86,6 +89,7 @@ def hash_object(args):
 
     oid = data.hash_object(file_content)
     print(f"hash object {args.file_path} -> {oid}")
+
 
 def cat_file(args):
     # get file content in binary
@@ -98,16 +102,20 @@ def cat_file(args):
     # (while print(f"") will print b"content"\n)
     sys.stdout.buffer.write(file_content)
 
+
 def write_tree(args):
     tree_oid = base.write_tree()
     print(tree_oid)
 
+
 def read_tree(args):
     base.read_tree(args.oid)
+
 
 def commit(args):
     version_oid = base.commit(args.message)
     print(f"commit {version_oid}")
+
 
 def _print_commit_data(commit_oid, commit: base.Commit) -> None:
     print(f"commit {commit_oid}\n")
@@ -128,6 +136,7 @@ def log(args):
 def checkout(args):
     base.checkout(args.commit)
     print(f"checkout commit, now HEAD is {args.commit}")
+
 
 def tag(args):
     commit_oid = args.commit

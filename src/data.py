@@ -50,9 +50,28 @@ def get_object_content(oid: str, expected: str | None = "blob") -> bytes:
         return content
 
 
+def _get_ref_internal(ref: str) -> Tuple[str, RefValue]:
+    target_path = os.path.join(RGIT_DIR, ref)
+    if os.path.isfile(target_path): # return zero value if file doesn't exist
+        return ("", RefValue(symbolic=False, value=""))
+
+    with open(target_path, "r") as reffile:
+        ref_content = reffile.read()
+
+    # 2 cases here: the content is hash -> return / another ref (ref: <ref-name>) -> recur
+    symref_prefix = "ref: "
+    if ref_content.startswith(symref_prefix):
+        return _get_ref_internal(ref_content.removeprefix(symref_prefix))
+
+    return (ref, RefValue(symbolic=False, value=ref_content))
+
+
 def update_ref(ref: str, ref_value: RefValue) -> None:
     if ref_value.symbolic:
         raise ValueError("at update_ref: need normal ref, found symbolic")
+
+    ref = _get_ref_internal(ref)[0] # trace back until the non-symbolic ref
+    if not ref: return
 
     target_path = os.path.join(RGIT_DIR, ref)
     os.makedirs(os.path.dirname(target_path), exist_ok=True)
@@ -63,19 +82,11 @@ def update_ref(ref: str, ref_value: RefValue) -> None:
 
 # get the ref name find the hash of the commit in .rgit/ref
 def get_ref_hash(ref: str) -> RefValue | None:
-    target_path = os.path.join(RGIT_DIR, ref)
-    if not os.path.isfile(target_path):
+    last_ref, value = _get_ref_internal(ref)
+    if not last_ref: # last_ref is "" if cannot find
         return None
 
-    with open(target_path, "r") as reffile:
-        ref_content = reffile.read().strip()
-
-    # 2 cases here: the content is hash -> return / another ref (ref: <ref-name>) -> recur
-    symref_prefix = "ref: "
-    if ref_content.startswith(symref_prefix):
-        return get_ref_hash(ref_content.removeprefix(symref_prefix))
-
-    return RefValue(symbolic=False, value=ref_content)
+    return value
 
 
 def iter_refs() -> Iterator[Tuple[str, RefValue]]:

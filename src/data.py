@@ -64,7 +64,15 @@ def get_ref_hash(ref: str) -> str:
         return ""
 
     with open(target_path, "r") as reffile:
-        return reffile.read().strip()
+        ref_content = reffile.read().strip()
+
+    # 2 cases here: the content is hash -> return / another ref (ref: <ref-name>) -> recur
+    symref_prefix = "ref: "
+    if ref_content.startswith(symref_prefix):
+        return get_ref_hash(ref_content.removeprefix(symref_prefix))
+
+    return ref_content
+
 
 def iter_refs() -> Iterator[Tuple[str, str]]:
     refs = ["HEAD"]

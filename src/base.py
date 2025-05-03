@@ -209,3 +209,8 @@ def iter_commits_and_parents(commit_oids: set[str]) -> Iterator[str]:
             continue
         elif commit.parent:
             oids_queue.appendleft(commit.parent)
+
+
+def create_branch(branch_name: str, start_commit: str) -> None:
+    branch_path = os.path.join("refs", "heads", branch_name)
+    data.update_ref(branch_path, start_commit)

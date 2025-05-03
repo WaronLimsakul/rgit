@@ -65,6 +65,11 @@ def parse_args():
     k_parser = commands.add_parser("k")
     k_parser.set_defaults(func=k)
 
+    branch_parser = commands.add_parser("branch")
+    branch_parser.add_argument("branch_name")
+    branch_parser.add_argument("start_point", default="@", nargs="?", type=oid)
+    branch_parser.set_defaults(func=branch)
+
     return parser.parse_args()
 
 def init(args):
@@ -157,3 +162,8 @@ def k(args):
         stdin=subprocess.PIPE # set up a way python program can use the process's stdin
     ) as process:
         process.communicate(dot.encode()) # this function send bytes into stdin
+
+
+def branch(args):
+    base.create_branch(args.branch_name, args.start_point)
+    print(f"create branch {args.branch_name} at {args.start_point[:10]}")

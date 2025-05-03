@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 import textwrap # lib for wrapping multi-line string
+import subprocess # lib for openning other processes
 from typing import Dict
 from src import data # if I want to import local lib, I have specify where it is
 from src import base
@@ -129,13 +130,31 @@ def tag(args):
     base.create_tag(args.tag_name, commit_oid)
     print(f"create tag: {args.tag_name} for commit: {commit_oid}")
 
+
+# generate the dot format for graphviz to visualize the commits we have from refs
 def k(args):
+
+    dot = 'digraph "commits" {\n'
     oids = set()
     for (ref, ref_hash) in data.iter_refs():
-        print(f"ref: {ref} | hash: {ref_hash}")
+        dot += f'"{ref}" [shape=note style=filled color=salmon2];\n'
+        dot += f'"{ref}" -> "{ref_hash}";\n'
         oids.add(ref_hash)
 
     for oid in base.iter_commits_and_parents(oids):
         commit = base.get_commit(oid)
-        print(f"oid: {oid}")
-        if commit.parent: print(f"parent: {commit.parent}")
+        dot += f'"{oid}" [style=filled label="{oid[:10]}" color=darkolivegreen3];\n'
+        if commit.parent:
+            dot += f'"{oid}" -> "{commit.parent}";\n'
+    dot += "}"
+    print(dot)
+
+    # subprocess is a lib for openning other program
+    # Popen stands for process open, start another process and execute something:
+        # it return a object represented a process
+    # we use with ... as ... to terminate gracefully at the end
+    with subprocess.Popen(
+        ["xdot", "/dev/stdin"], # run "dot" using gtk (gui) from stdin
+        stdin=subprocess.PIPE # set up a way python program can use the process's stdin
+    ) as process:
+        process.communicate(dot.encode()) # this function send bytes into stdin

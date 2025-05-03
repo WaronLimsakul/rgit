@@ -204,4 +204,7 @@ def iter_commits_and_parents(oids: set[str]) -> Iterator[str]:
         yield oid
 
         commit = get_commit(oid)
-        if commit.parent: oids.add(commit.parent)
+        if not commit:
+            continue
+        elif commit.parent:
+            oids.add(commit.parent)

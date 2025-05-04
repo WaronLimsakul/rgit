@@ -81,6 +81,10 @@ def parse_args():
     show_parser.add_argument("commit", default="@", nargs="?", type=oid)
     show_parser.set_defaults(func=show)
 
+    diff_parser = commands.add_parser("diff")
+    diff_parser.add_argument("commit", default="@", nargs="?", type=oid)
+    diff_parser.set_defaults(func=show_diff)
+
     return parser.parse_args()
 
 
@@ -233,3 +237,13 @@ def show(args):
         diff_msg = diff.diff_trees(current_tree, parent_tree)
         sys.stdout.buffer.flush()
         sys.stdout.buffer.write(diff_msg)
+
+def show_diff(args):
+    target_commit = base.get_commit(args.commit)
+    assert target_commit is not None
+    target_tree = base.get_tree(target_commit.tree)
+    working_tree = base.get_working_tree()
+
+    diff_msg = diff.diff_trees(working_tree, target_tree)
+    sys.stdout.buffer.flush()
+    sys.stdout.buffer.write(diff_msg)

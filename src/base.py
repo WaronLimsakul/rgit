@@ -9,6 +9,7 @@ from collections import namedtuple, deque
 
 # a lazy way to define a class with just attributes
 Commit = namedtuple("Commit", ["tree", "parent", "message"])
+type Tree = Dict[str, str] # path -> oid
 
 
 def init() -> None:
@@ -67,7 +68,7 @@ def _iter_tree_entries(oid: str) -> Iterator[Tuple[str, str, str]]:
 
 
 # get oid and opt base_path, put every blob inside the tree to dict: path -> oid
-def get_tree(oid: str, base_path: str = "") -> Dict[str, str]:
+def get_tree(oid: str, base_path: str = "") -> Tree:
     res = {}
     for (child_type, child_oid, child_name) in _iter_tree_entries(oid):
         assert "/" not in child_name
@@ -254,7 +255,7 @@ def iter_branches_name() -> Iterator[str]:
         yield os.path.basename(branch_path)
 
 
-
+# move the head (trace back too) to whatever
 def reset(commit_oid: str) -> None:
     if not get_commit(commit_oid):
         raise ValueError(f"invalid commit {commit_oid}")
@@ -264,3 +265,19 @@ def reset(commit_oid: str) -> None:
         raise ValueError("detached head")
 
     data.update_ref("HEAD", data.RefValue(symbolic=False, value=commit_oid), deref=True)
+
+
+# get a Tree for working directory
+def get_working_tree(start_point: str = ".") -> Tree:
+    working_tree = {}
+    for path, _, filenames in os.walk(start_point):
+        if is_ignored(path): continue
+        for filename in filenames:
+            file_path = os.path.join(path, filename)
+            with open(file_path, "rb") as file:
+                file_bytes = file.read()
+            target_path = os.path.relpath(file_path)
+            oid = data.hash_object(file_bytes, type_="blob")
+            working_tree[target_path] = oid
+
+    return working_tree

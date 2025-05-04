@@ -9,6 +9,7 @@ from collections import namedtuple, deque
 
 def init() -> None:
     data.init()
+    create_branch("master", "") #  don't have any commit, so blank
     master_path = os.path.join("refs", "heads", "master")
     data.update_ref("HEAD", data.RefValue(symbolic=True, value=master_path), deref=False)
 
@@ -236,3 +237,11 @@ def iter_commits_and_parents(commit_oids: set[str]) -> Iterator[str]:
 def create_branch(branch_name: str, start_commit: str) -> None:
     branch_path = os.path.join("refs", "heads", branch_name)
     data.update_ref(branch_path, data.RefValue(symbolic=False, value=start_commit))
+
+
+def status() -> str:
+    head_data = data.get_ref_value("HEAD", deref=False)
+    if head_data.symbolic: # if HEAD is symbolic, it points to a branch
+        return os.path.basename(head_data.value) # cut prefix /refs/heads out
+    else:
+        return ""

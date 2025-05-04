@@ -218,6 +218,17 @@ def status(args):
         print(f"HEAD detached at {head_oid[:10]}")
 
 
+    latest_commit_oid = base.get_oid("HEAD")
+    latest_commit = base.get_commit(latest_commit_oid)
+    assert latest_commit is not None
+    target_tree = base.get_tree(latest_commit.tree)
+    working_tree = base.get_working_tree()
+
+    print("\nChanges to be commited\n")
+    for (path, change_type) in diff.iter_changed_files(working_tree, target_tree):
+        print(f"{change_type}: {path}")
+
+
 def reset(args):
     base.reset(args.commit)
     print(f"reset to commit {args.commit[:10]}")

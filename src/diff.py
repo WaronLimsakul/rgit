@@ -42,3 +42,11 @@ def diff_blobs(blob_to_oid: str | None, blob_from_oid: str | None, path: str | N
         ) as process:
             diff_msg, _ = process.communicate()
         return diff_msg
+
+
+def iter_changed_files(tree_to: base.Tree, tree_from: base.Tree) -> Iterator[Tuple[str, str]]:
+    for path, oid_to, oid_from in compare_trees(tree_to, tree_from):
+        if oid_to == oid_from or path is None: continue
+        elif oid_from is None: yield (path, "created")
+        elif oid_to is None: yield (path, "deleted")
+        else: yield (path, "modified")

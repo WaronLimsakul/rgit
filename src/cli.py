@@ -6,8 +6,7 @@ import textwrap # lib for wrapping multi-line string
 import subprocess # lib for openning other processes
 from collections import defaultdict
 from typing import Dict
-from src import data # if I want to import local lib, I have specify where it is
-from src import base
+from src import data, base, diff # if I want to import local lib, I have specify where it is
 
 def main():
     args = parse_args()
@@ -224,3 +223,10 @@ def show(args):
     commit_oid = args.commit
     commit = base.get_commit(commit_oid)
     _print_commit_data(commit_oid, commit)
+    if commit.parent:
+        parent_tree_oid = base.get_commit(commit.parent).tree
+        current_tree_oid = commit.tree
+        parent_tree = base.get_tree(parent_tree_oid)
+        current_tree = base.get_tree(current_tree_oid)
+        diff_msg = diff.diff_trees(current_tree, parent_tree)
+        print(diff_msg)

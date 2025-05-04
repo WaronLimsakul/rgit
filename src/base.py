@@ -242,7 +242,7 @@ def create_branch(branch_name: str, start_commit: str) -> None:
 # return current branch name in string, return "" if not found
 def get_current_branch() -> str:
     head_data = data.get_ref_value("HEAD", deref=False)
-    if head_data.symbolic: # if HEAD is symbolic, it points to a branch
+    if head_data and head_data.symbolic: # if HEAD is symbolic, it points to a branch
         return os.path.basename(head_data.value) # cut prefix /refs/heads out
     else:
         return ""

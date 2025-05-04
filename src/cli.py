@@ -4,6 +4,7 @@ import os
 import sys
 import textwrap # lib for wrapping multi-line string
 import subprocess # lib for openning other processes
+from collections import defaultdict
 from typing import Dict
 from src import data # if I want to import local lib, I have specify where it is
 from src import base
@@ -120,8 +121,9 @@ def commit(args):
     print(f"commit {version_oid}")
 
 
-def _print_commit_data(commit_oid, commit: base.Commit) -> None:
-    print(f"commit {commit_oid}\n")
+def _print_commit_data(commit_oid, commit: base.Commit, refs: list[str]) -> None:
+    refs_msg = ", ".join(refs) if refs else ""
+    print(f"commit {commit_oid}: {refs_msg}\n")
 
     # .indent(<string>, prefix) will add prefix to every line in the <string>
     print(textwrap.indent(commit.message, "    "))
@@ -131,9 +133,14 @@ def _print_commit_data(commit_oid, commit: base.Commit) -> None:
 def log(args):
     commit_oid = args.oid
 
+    commit_to_ref = defaultdict(list)
+    for ref, ref_value in data.iter_refs(deref=True):
+        commit_to_ref[ref_value.value].append(ref)
+
+
     for commit_oid in base.iter_commits_and_parents({commit_oid}):
         commit = base.get_commit(commit_oid)
-        _print_commit_data(commit_oid, commit)
+        _print_commit_data(commit_oid, commit, commit_to_ref[commit_oid])
 
 
 def checkout(args):

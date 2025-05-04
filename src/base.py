@@ -7,6 +7,10 @@ from typing import Dict, Iterator, Tuple
 from collections import namedtuple, deque
 
 
+# a lazy way to define a class with just attributes
+Commit = namedtuple("Commit", ["tree", "parent", "message"])
+
+
 def init() -> None:
     data.init()
     create_branch("master", "") #  don't have any commit, so blank
@@ -129,9 +133,6 @@ def commit(message: str) -> str:
 
     return commit_oid
 
-
-# a lazy way to define a class with just attributes
-Commit = namedtuple("Commit", ["tree", "parent", "message"])
 
 # get the oid of the commit, parse the data then return
 # the Commit object (explicit fields, better than normal dict)

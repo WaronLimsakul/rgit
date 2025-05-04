@@ -226,7 +226,10 @@ def show(args):
     if commit.parent:
         parent_tree_oid = base.get_commit(commit.parent).tree
         current_tree_oid = commit.tree
+
         parent_tree = base.get_tree(parent_tree_oid)
         current_tree = base.get_tree(current_tree_oid)
+
         diff_msg = diff.diff_trees(current_tree, parent_tree)
-        print(diff_msg)
+        sys.stdout.buffer.flush()
+        sys.stdout.buffer.write(diff_msg)

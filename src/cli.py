@@ -78,6 +78,10 @@ def parse_args():
     reset_parser.add_argument("commit", type=oid)
     reset_parser.set_defaults(func=reset)
 
+    show_parser = commands.add_parser("show")
+    show_parser.add_argument("commit", default="@", nargs="?", type=oid)
+    show_parser.set_defaults(func=show)
+
     return parser.parse_args()
 
 
@@ -125,7 +129,7 @@ def commit(args):
     print(f"commit {version_oid}")
 
 
-def _print_commit_data(commit_oid, commit: base.Commit, refs: list[str]) -> None:
+def _print_commit_data(commit_oid, commit: base.Commit, refs: list[str] = []) -> None:
     refs_msg = ", ".join(refs) if refs else ""
     print(f"commit {commit_oid}: {refs_msg}\n")
 
@@ -213,4 +217,10 @@ def status(args):
 
 def reset(args):
     base.reset(args.commit)
-    print(f"reset to commit {args.commit}")
+    print(f"reset to commit {args.commit[:10]}")
+
+
+def show(args):
+    commit_oid = args.commit
+    commit = base.get_commit(commit_oid)
+    _print_commit_data(commit_oid, commit)

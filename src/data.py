@@ -86,7 +86,7 @@ def update_ref(ref: str, ref_value: RefValue, deref: bool = True) -> None:
     if ref_value.symbolic: # prepare before writing
         updated_value = SYMREF_PREFIX + ref_value.value
     else:
-        update_value = ref_value.value
+        updated_value = ref_value.value
 
     with open(target_path, "w") as reffile:
         reffile.write(updated_value)

@@ -53,7 +53,7 @@ def parse_args():
     log_parser.set_defaults(func=log)
 
     checkout_parser = commands.add_parser("checkout")
-    checkout_parser.add_argument("commit", type=oid)
+    checkout_parser.add_argument("commit")
     checkout_parser.set_defaults(func=checkout)
 
     tag_parser = commands.add_parser("tag")
@@ -135,7 +135,7 @@ def log(args):
 
 def checkout(args):
     base.checkout(args.commit)
-    print(f"checkout commit, now HEAD is {args.commit}")
+    print(f"checkout {args.commit}, now HEAD is {args.commit}")
 
 
 def tag(args):

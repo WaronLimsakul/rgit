@@ -117,7 +117,8 @@ def commit(message: str) -> str:
 
 
     commit_oid = data.hash_object(commit_content.encode(), type_="commit")
-    data.update_ref("HEAD", data.RefValue(symbolic=False, value=commit_oid))
+    # deref=True because we want to update the non-symbolic one, not shallow ref
+    data.update_ref("HEAD", data.RefValue(symbolic=False, value=commit_oid), deref=True)
 
     return commit_oid
 
@@ -152,16 +153,30 @@ def get_commit(oid: str) -> Commit | None:
 
     return Commit(tree=tree, parent=parent, message=message)
 
-# read tree using commit_oid and set the head to that ID
-def checkout(commit_oid: str) -> None:
-    if not os.path.exists(f"{data.OBJECTS_DIR}/{commit_oid}"):
-        raise ValueError(f"checkout faile: commit {commit_oid} doesn't exist")
+
+def _is_branch(name: str) -> bool:
+    branch_path = os.path.join("refs", "heads", name)
+    return data.get_ref_value(branch_path, deref=False) is not None
+
+
+# find the commit oid, read tree from it and update head to the shallow ref (if exist)
+def checkout(commit: str) -> None:
+    symbolic = _is_branch(commit)
+    if symbolic:
+        commit = os.path.join("refs", "heads", commit) # update commit to real path
+        ref_value = data.get_ref_value(commit, deref=True)
+        assert ref_value is not None
+        commit_oid = ref_value.value
+    else:
+        commit_oid = commit
 
     commit_data = get_commit(commit_oid)
-    if not commit_data: return
+    if not commit_data:
+        raise FileNotFoundError(f"commit {commit_oid} from input {commit} not found")
 
     read_tree(commit_data.tree)
-    data.update_ref("HEAD", data.RefValue(symbolic=False, value=commit_oid))
+    # deref=False because we want HEAD to be able to be symbolic (point to a branch, not oid)
+    data.update_ref("HEAD", data.RefValue(symbolic=symbolic, value=commit), deref=False)
 
 
 # use update_ref to create tag.

@@ -74,7 +74,7 @@ def parse_args():
 
 
 def init(args):
-    data.init()
+    base.init()
     print(f"initialize rgit repo in {os.getcwd()}/{data.RGIT_DIR}")
 
 

@@ -6,6 +6,13 @@ from src import data
 from typing import Dict, Iterator, Tuple
 from collections import namedtuple, deque
 
+
+def init() -> None:
+    data.init()
+    master_path = os.path.join("refs", "heads", "master")
+    data.update_ref("HEAD", data.RefValue(symbolic=True, value=master_path), deref=False)
+
+
 # the tree object is a hash of
 # type oid name
 # ...
@@ -114,7 +121,6 @@ def commit(message: str) -> str:
 
     commit_content += "\n"
     commit_content += f"{message}\n"
-
 
     commit_oid = data.hash_object(commit_content.encode(), type_="commit")
     # deref=True because we want to update the non-symbolic one, not shallow ref
@@ -226,6 +232,7 @@ def iter_commits_and_parents(commit_oids: set[str]) -> Iterator[str]:
             oids_queue.appendleft(commit.parent)
 
 
+# create a branch file in refs/heads/ then write the oid to the branch
 def create_branch(branch_name: str, start_commit: str) -> None:
     branch_path = os.path.join("refs", "heads", branch_name)
     data.update_ref(branch_path, data.RefValue(symbolic=False, value=start_commit))

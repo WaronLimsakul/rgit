@@ -66,7 +66,7 @@ def parse_args():
     k_parser.set_defaults(func=k)
 
     branch_parser = commands.add_parser("branch")
-    branch_parser.add_argument("branch_name")
+    branch_parser.add_argument("branch_name", nargs="?")
     branch_parser.add_argument("start_point", default="@", nargs="?", type=oid)
     branch_parser.set_defaults(func=branch)
 
@@ -179,13 +179,20 @@ def k(args):
         process.communicate(dot.encode()) # this function send bytes into stdin
 
 
+
 def branch(args):
-    base.create_branch(args.branch_name, args.start_point)
-    print(f"create branch {args.branch_name} at {args.start_point[:10]}")
+    if not args.branch_name:
+        cur_branch = base.get_current_branch()
+        for branch in base.iter_branches_name():
+            prefix = "*" if cur_branch == branch else " "
+            print(f"{prefix} {branch}")
+    else:
+        base.create_branch(args.branch_name, args.start_point)
+        print(f"create branch {args.branch_name} at {args.start_point[:10]}")
 
 
 def status(args):
-    current_branch = base.status()
+    current_branch = base.get_current_branch()
     if current_branch:
         print(f"current branch: {current_branch}")
     else: # detached case

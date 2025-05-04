@@ -98,12 +98,13 @@ def get_ref_value(ref: str, deref: bool = True) -> RefValue | None:
     return value
 
 
-# iterate every refs inside .rgit/
+# iterate every refs inside .rgit/ and return (full_ref, ref_value)
 # choose deref = False to get value of symbolic ref
-def iter_refs(deref: bool = True) -> Iterator[Tuple[str, RefValue]]:
-    refs = ["HEAD"]
+# choose prefix = something to only iterate in .rgit/refs/something
+def iter_refs(deref: bool = True, prefix: str = "") -> Iterator[Tuple[str, RefValue]]:
+    refs = ["HEAD"] if not prefix else []
 
-    start_path = os.path.join(RGIT_DIR, "refs")
+    start_path = os.path.join(RGIT_DIR, "refs", prefix)
     for root, _, filenames in os.walk(start_path):
         # root form os.walk is absolute, but all our functionality need relative
         root = os.path.relpath(root, RGIT_DIR)

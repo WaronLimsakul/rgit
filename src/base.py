@@ -247,6 +247,19 @@ def get_current_branch() -> str:
     else:
         return ""
 
-def iter_branches_name():
+
+def iter_branches_name() -> Iterator[str]:
     for branch_path, _  in data.iter_refs(deref=False, prefix="heads"):
         yield os.path.basename(branch_path)
+
+
+
+def reset(commit_oid: str) -> None:
+    if not get_commit(commit_oid):
+        raise ValueError(f"invalid commit {commit_oid}")
+
+    # have to check if we are detached?
+    if not get_current_branch():
+        raise ValueError("detached head")
+
+    data.update_ref("HEAD", data.RefValue(symbolic=False, value=commit_oid), deref=True)

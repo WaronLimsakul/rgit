@@ -74,6 +74,10 @@ def parse_args():
     status_parser = commands.add_parser("status")
     status_parser.set_defaults(func=status)
 
+    reset_parser = commands.add_parser("reset")
+    reset_parser.add_argument("commit", type=oid)
+    reset_parser.set_defaults(func=reset)
+
     return parser.parse_args()
 
 
@@ -205,3 +209,8 @@ def status(args):
     else: # detached case
         head_oid = base.get_oid("HEAD")
         print(f"HEAD detached at {head_oid[:10]}")
+
+
+def reset(args):
+    base.reset(args.commit)
+    print(f"reset to commit {args.commit}")

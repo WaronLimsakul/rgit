@@ -8,7 +8,7 @@ from collections import namedtuple, deque
 
 
 # a lazy way to define a class with just attributes
-Commit = namedtuple("Commit", ["tree", "parent", "message"])
+Commit = namedtuple("Commit", ["tree", "parents", "message"])
 type Tree = Dict[str, str] # path -> oid
 
 
@@ -141,7 +141,7 @@ def get_commit(oid: str) -> Commit | None:
     if not oid:
         return None
     commit_content = data.get_object_content(oid, expected="commit")
-    tree, parent = "", ""
+    tree, parents = "", []
 
     # iter takes a list and return iterator, an object you can call next() to
     # get the next thing. + there is lib called itertools for loop this class
@@ -154,13 +154,13 @@ def get_commit(oid: str) -> Commit | None:
         if key == "tree":
             tree = value
         elif key == "parent":
-            parent = value
+            parents.append(value)
         else:
             raise ValueError(f"unknown field {key}")
 
     message = "\n".join(lines) # the lines left are just message
 
-    return Commit(tree=tree, parent=parent, message=message)
+    return Commit(tree=tree, parents=parents, message=message)
 
 
 def _is_branch(name: str) -> bool:
@@ -223,7 +223,7 @@ def iter_commits_and_parents(commit_oids: set[str]) -> Iterator[str]:
     oids_queue = deque(commit_oids)
     visited = set()
     while oids_queue:
-        oid = oids_queue.popleft()
+        oid = oids_queue.pop()
         if oid in visited: continue
         visited.add(oid)
         yield oid
@@ -231,8 +231,12 @@ def iter_commits_and_parents(commit_oids: set[str]) -> Iterator[str]:
         commit = get_commit(oid)
         if not commit:
             continue
-        elif commit.parent:
-            oids_queue.appendleft(commit.parent)
+        elif commit.parents:
+            # we want to do DFS in each branch separately, so if we're at intersection
+            # we will push first parent to the stack (append)
+            # and other parents (branches) to the queue (extendleft)
+            oids_queue.append(commit.parents[0]) # extend takes a list btw
+            oids_queue.extendleft(commit.parents[1:])
 
 
 # create a branch file in refs/heads/ then write the oid to the branch

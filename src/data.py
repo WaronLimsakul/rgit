@@ -102,7 +102,7 @@ def get_ref_value(ref: str, deref: bool = True) -> RefValue | None:
 # choose deref = False to get value of symbolic ref
 # choose prefix = something to only iterate in .rgit/refs/something
 def iter_refs(deref: bool = True, prefix: str = "") -> Iterator[Tuple[str, RefValue]]:
-    refs = ["HEAD"] if not prefix else []
+    refs = ["HEAD", "MERGE_HEAD"] if not prefix else []
 
     start_path = os.path.join(RGIT_DIR, "refs", prefix)
     for root, _, filenames in os.walk(start_path):

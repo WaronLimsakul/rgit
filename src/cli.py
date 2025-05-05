@@ -89,6 +89,11 @@ def parse_args():
     merge_parser.add_argument("commit", type=oid)
     merge_parser.set_defaults(func=merge)
 
+    merge_base_parser = commands.add_parser("merge-base")
+    merge_base_parser.add_argument("commit_oid_a", type=oid)
+    merge_base_parser.add_argument("commit_oid_b", type=oid)
+    merge_base_parser.set_defaults(func=merge_base)
+
     return parser.parse_args()
 
 
@@ -270,3 +275,7 @@ def show_diff(args):
 def merge(args):
     base.merge(args.commit)
     print(f"merge commit {args.commit}")
+
+def merge_base(args):
+    base_oid = base.merge_base(args.commit_oid_a, args.commit_oid_b)
+    print(f"the base is commit {base_oid[:10]}")

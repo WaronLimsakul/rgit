@@ -320,3 +320,24 @@ def merge(commit_oid: str) -> None:
     data.update_ref("MERGE_HEAD", data.RefValue(symbolic=False, value=commit_oid))
     commit(f"merge commit {commit_oid[:10]}")
     data.delete_ref("MERGE_HEAD")
+
+
+
+# get 2 commit oids and return the commit oid of nearest common ancestor
+# Note: I use BFS here because I think it's optimal.
+def merge_base(oid_a: str, oid_b: str) -> str:
+    visited: Dict[str, set[str]] = { "a": set(), "b": set() }
+    queue = deque([(oid_a, "a"), (oid_b, "b")])
+    while queue:
+        oid, branch = queue.popleft()
+        other_branch = "a" if branch == "b" else "a"
+        if oid in visited[other_branch]:
+            return oid
+
+        commit = get_commit(oid)
+        if commit is None: continue
+        for parent in commit.parents:
+            queue.append((parent, branch))
+        visited[branch].add(oid)
+
+    raise ValueError(f"couldn't find ancestor for {oid_a[:10]} {oid_b[:10]}")

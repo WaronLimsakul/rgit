@@ -152,7 +152,6 @@ def log(args):
     for ref, ref_value in data.iter_refs(deref=True):
         commit_to_ref[ref_value.value].append(ref)
 
-
     for commit_oid in base.iter_commits_and_parents({commit_oid}):
         commit = base.get_commit(commit_oid)
         _print_commit_data(commit_oid, commit, commit_to_ref[commit_oid])
@@ -171,11 +170,10 @@ def tag(args):
 
 # generate the dot format for graphviz to visualize the commits we have from refs
 def k(args):
-
     dot = 'digraph "commits" {\n'
+    dot += '"root" [style=filled color=gray];\n'
     oids = set()
     for (ref, ref_value) in data.iter_refs(deref=False):
-        print(f"ref: {ref} | symbolic: {ref_value.symbolic} | value: {ref_value.value}")
         dot += f'"{ref}" [shape=note style=filled color=salmon2];\n'
         dot += f'"{ref}" -> "{ref_value.value}";\n'
         if not ref_value.symbolic: # we want only oid from what we found
@@ -186,7 +184,7 @@ def k(args):
         dot += f'"{oid}" [style=filled label="{oid[:10]}" color=darkolivegreen3];\n'
         if commit and commit.parents:
             for parent in commit.parents:
-                dot += f'"{oid}" -> "{parent}";\n'
+                dot += f'"{oid}" -> "{parent or "root"}";\n'
 
     dot += "}"
     print(dot)
@@ -222,6 +220,9 @@ def status(args):
         head_oid = base.get_oid("HEAD")
         print(f"HEAD detached at {head_oid[:10]}")
 
+    merge_head = data.get_ref_value("MERGE_HEAD")
+    if merge_head:
+        print(f"Merging with {merge_head.value[:10]}")
 
     latest_commit_oid = base.get_oid("HEAD")
     latest_commit = base.get_commit(latest_commit_oid)

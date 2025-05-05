@@ -125,6 +125,11 @@ def commit(message: str) -> str:
     if parent_oid: # the first commit doesn't have parent ("")
         commit_content += f"parent {parent_oid.value}\n"
 
+    # other parent in merging case
+    other_parent_oid = data.get_ref_value("MERGE_HEAD")
+    if other_parent_oid:
+        commit_content += f"parent {other_parent_oid.value}\n"
+
     commit_content += "\n"
     commit_content += f"{message}\n"
 
@@ -224,7 +229,7 @@ def iter_commits_and_parents(commit_oids: set[str]) -> Iterator[str]:
     visited = set()
     while oids_queue:
         oid = oids_queue.pop()
-        if oid in visited: continue
+        if oid == "" or oid in visited: continue
         visited.add(oid)
         yield oid
 
@@ -302,22 +307,16 @@ def read_tree_merged(head_tree_oid: str, other_tree_oid: str) -> None:
 
 # receive any commit oid to merge into, then merge it into HEAD
 def merge(commit_oid: str) -> None:
-    commit = get_commit(commit_oid)
-    assert commit is not None
-    other_tree_oid = commit.tree
-
     head_commit = get_commit(get_oid("HEAD"))
     assert head_commit is not None
     head_tree_oid = head_commit.tree
 
+    target_commit = get_commit(commit_oid)
+    assert target_commit is not None
+    other_tree_oid = target_commit.tree
+
     read_tree_merged(head_tree_oid, other_tree_oid)
 
-
-# for deleting MERGE_HEAD ref when merge
-def delete_ref(ref: str) -> None:
-    target_path = os.path.join(data.RGIT_DIR, ref)
-    try:
-        os.remove(target_path)
-    except OSError as error:
-        # if the file already doesn't exist, it should be fine
-        pass
+    data.update_ref("MERGE_HEAD", data.RefValue(symbolic=False, value=commit_oid))
+    commit(f"merge commit {commit_oid[:10]}")
+    data.delete_ref("MERGE_HEAD")

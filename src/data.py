@@ -115,3 +115,13 @@ def iter_refs(deref: bool = True, prefix: str = "") -> Iterator[Tuple[str, RefVa
         ref_hash = get_ref_value(ref, deref=deref)
         if not ref_hash: continue
         yield (ref, ref_hash)
+
+
+# for deleting MERGE_HEAD ref when merge
+def delete_ref(ref: str) -> None:
+    target_path = os.path.join(RGIT_DIR, ref)
+    try:
+        os.remove(target_path)
+    except OSError as error:
+        # if the file already doesn't exist, it should be fine
+        pass

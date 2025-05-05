@@ -2,7 +2,7 @@
 import os
 import itertools
 import string
-from src import data
+from src import data, diff
 from typing import Dict, Iterator, Tuple
 from collections import namedtuple, deque
 
@@ -281,3 +281,29 @@ def get_working_tree(start_point: str = ".") -> Tree:
             working_tree[target_path] = oid
 
     return working_tree
+
+
+# receive 2 tree oids and, merge them and apply to working directory
+def read_tree_merged(head_tree_oid: str, other_tree_oid: str) -> None:
+    _empty_current_dir()
+    head_tree, other_tree = get_tree(head_tree_oid), get_tree(other_tree_oid)
+    merged_tree: Tree = diff.merge_trees(head_tree, other_tree)
+    for path, oid in merged_tree.items():
+        dir = os.path.dirname(path)
+        os.makedirs(f"./{dir}", exist_ok=True) # add ./ to let os know it's relative
+        file_content = data.get_object_content(oid)
+        with open(path, "wb") as file:
+            file.write(file_content)
+
+
+# receive any commit oid to merge into, then merge it into HEAD
+def merge(commit_oid: str) -> None:
+    commit = get_commit(commit_oid)
+    assert commit is not None
+    other_tree_oid = commit.tree
+
+    head_commit = get_commit(get_oid("HEAD"))
+    assert head_commit is not None
+    head_tree_oid = head_commit.tree
+
+    read_tree_merged(head_tree_oid, other_tree_oid)

@@ -85,6 +85,10 @@ def parse_args():
     diff_parser.add_argument("commit", default="@", nargs="?", type=oid)
     diff_parser.set_defaults(func=show_diff)
 
+    merge_parser = commands.add_parser("merge")
+    merge_parser.add_argument("commit", type=oid)
+    merge_parser.set_defaults(func=merge)
+
     return parser.parse_args()
 
 
@@ -258,3 +262,8 @@ def show_diff(args):
     diff_msg = diff.diff_trees(working_tree, target_tree)
     sys.stdout.buffer.flush()
     sys.stdout.buffer.write(diff_msg)
+
+
+def merge(args):
+    base.merge(args.commit)
+    print(f"merge commit {args.commit}")

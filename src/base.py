@@ -292,11 +292,15 @@ def get_working_tree(start_point: str = ".") -> Tree:
     return working_tree
 
 
-# receive 2 tree oids and, merge them and apply to working directory
-def read_tree_merged(head_tree_oid: str, other_tree_oid: str) -> None:
+# receive 2 tree oids and a base tree oid, do 3-way merge and apply to working directory
+def read_tree_merged(head_tree_oid: str, other_tree_oid: str, base_tree_oid: str) -> None:
     _empty_current_dir()
-    head_tree, other_tree = get_tree(head_tree_oid), get_tree(other_tree_oid)
-    merged_tree: Tree = diff.merge_trees(head_tree, other_tree)
+
+    head_tree = get_tree(head_tree_oid)
+    other_tree = get_tree(other_tree_oid)
+    base_tree = get_tree(base_tree_oid)
+
+    merged_tree: Tree = diff.merge_trees(head_tree, other_tree, base_tree)
     for path, oid in merged_tree.items():
         dir = os.path.dirname(path)
         os.makedirs(f"./{dir}", exist_ok=True) # add ./ to let os know it's relative
@@ -305,17 +309,22 @@ def read_tree_merged(head_tree_oid: str, other_tree_oid: str) -> None:
             file.write(file_content)
 
 
+def commit_to_tree_oid(commit_oid: str) -> str:
+    commit = get_commit(commit_oid)
+    assert commit is not None
+    return commit.tree
+
+
 # receive any commit oid to merge into, then merge it into HEAD
 def merge(commit_oid: str) -> None:
-    head_commit = get_commit(get_oid("HEAD"))
-    assert head_commit is not None
-    head_tree_oid = head_commit.tree
+    head_oid = get_oid("HEAD")
+    base_oid = get_merge_base(head_oid, commit_oid)
 
-    target_commit = get_commit(commit_oid)
-    assert target_commit is not None
-    other_tree_oid = target_commit.tree
+    head_tree_oid = commit_to_tree_oid(head_oid)
+    other_tree_oid = commit_to_tree_oid(commit_oid)
+    base_tree_oid = commit_to_tree_oid(base_oid)
 
-    read_tree_merged(head_tree_oid, other_tree_oid)
+    read_tree_merged(head_tree_oid, other_tree_oid, base_tree_oid)
 
     data.update_ref("MERGE_HEAD", data.RefValue(symbolic=False, value=commit_oid))
     commit(f"merge commit {commit_oid[:10]}")
@@ -325,7 +334,7 @@ def merge(commit_oid: str) -> None:
 
 # get 2 commit oids and return the commit oid of nearest common ancestor
 # Note: I use BFS here because I think it's optimal.
-def merge_base(oid_a: str, oid_b: str) -> str:
+def get_merge_base(oid_a: str, oid_b: str) -> str:
     visited: Dict[str, set[str]] = { "a": set(), "b": set() }
     queue = deque([(oid_a, "a"), (oid_b, "b")])
     while queue:

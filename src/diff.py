@@ -1,7 +1,7 @@
 import subprocess
 import sys
 from collections import defaultdict
-from typing import Tuple, Dict, Iterator
+from typing import Tuple, Dict, Iterator, IO
 from src import data
 from tempfile import NamedTemporaryFile as TempFile
 
@@ -56,20 +56,26 @@ def iter_changed_files(tree_to: Tree, tree_from: Tree) -> Iterator[Tuple[str, st
         elif oid_to is None: yield (path, "deleted")
         else: yield (path, "modified")
 
+def _temp_file(oid: str | None) -> IO[bytes]:
+    file = TempFile()
+    content = data.get_object_content(oid) if oid else b""
+    file.write(content)
+    file.flush()
+    return file
 
-def merge_blobs(head_oid: str | None, other_oid: str | None) -> str:
-    head_content = data.get_object_content(head_oid) if head_oid else b""
-    other_content = data.get_object_content(other_oid) if other_oid else b""
-
-    with TempFile() as head_file, TempFile() as other_file:
-        head_file.write(head_content)
-        head_file.flush()
-
-        other_file.write(other_content)
-        other_file.flush()
-
+def merge_blobs(
+    head_oid: str | None,
+    other_oid: str | None,
+    base_oid: str | None
+) -> str:
+    with _temp_file(head_oid) as head_file, \
+         _temp_file(other_oid) as other_file, \
+         _temp_file(base_oid) as base_file:
         with subprocess.Popen(
-            ["/usr/bin/diff", "-DHEAD", head_file.name, other_file.name],
+            ["/usr/bin/diff3", "-m",
+                "-L", "HEAD", head_file.name,
+                "-L", "BASE", base_file.name,
+                "-L", "MERGE_HEAD", other_file.name],
             stdout=subprocess.PIPE
         ) as process:
             merged_content, _ = process.communicate()
@@ -78,10 +84,10 @@ def merge_blobs(head_oid: str | None, other_oid: str | None) -> str:
         return merged_oid
 
 
-def merge_trees(tree_to: Tree, tree_from: Tree) -> Tree:
+def merge_trees(tree_to: Tree, tree_from: Tree, tree_base: Tree) -> Tree:
     merged_tree = {}
-    for path, blob_to, blob_from in compare_trees(tree_to, tree_from):
-        merged_blob_oid = merge_blobs(blob_to, blob_from)
+    for path, blob_to, blob_from, blob_base in compare_trees(tree_to, tree_from, tree_base):
+        merged_blob_oid = merge_blobs(blob_to, blob_from, blob_base)
         assert path
         merged_tree[path] = merged_blob_oid
     return merged_tree

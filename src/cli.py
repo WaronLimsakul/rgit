@@ -277,5 +277,5 @@ def merge(args):
     print(f"merge commit {args.commit}")
 
 def merge_base(args):
-    base_oid = base.merge_base(args.commit_oid_a, args.commit_oid_b)
+    base_oid = base.get_merge_base(args.commit_oid_a, args.commit_oid_b)
     print(f"the base is commit {base_oid[:10]}")

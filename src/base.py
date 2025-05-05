@@ -265,15 +265,14 @@ def iter_branches_name() -> Iterator[str]:
 
 
 # move the head (trace back too) to whatever
-def reset(commit_oid: str) -> None:
-    if not get_commit(commit_oid):
-        raise ValueError(f"invalid commit {commit_oid}")
-
-    # have to check if we are detached?
-    if not get_current_branch():
-        raise ValueError("detached head")
+def reset(commit_oid: str, hard: bool) -> None:
+    commit = get_commit(commit_oid)
+    assert commit is not None, f"invalid commit {commit_oid}"
+    assert get_current_branch() is not None, "detached head"
 
     data.update_ref("HEAD", data.RefValue(symbolic=False, value=commit_oid), deref=True)
+    if hard:
+        read_tree(commit.tree)
 
 
 # get a Tree for working directory

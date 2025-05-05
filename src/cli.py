@@ -75,6 +75,7 @@ def parse_args():
 
     reset_parser = commands.add_parser("reset")
     reset_parser.add_argument("commit", type=oid)
+    reset_parser.add_argument("--hard", action="store_false")
     reset_parser.set_defaults(func=reset)
 
     show_parser = commands.add_parser("show")
@@ -241,7 +242,7 @@ def status(args):
 
 
 def reset(args):
-    base.reset(args.commit)
+    base.reset(args.commit, args.hard)
     print(f"reset to commit {args.commit[:10]}")
 
 

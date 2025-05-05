@@ -75,7 +75,7 @@ def parse_args():
 
     reset_parser = commands.add_parser("reset")
     reset_parser.add_argument("commit", type=oid)
-    reset_parser.add_argument("--hard", action="store_false")
+    reset_parser.add_argument("--hard", action="store_true") # set default to not reset hard
     reset_parser.set_defaults(func=reset)
 
     show_parser = commands.add_parser("show")

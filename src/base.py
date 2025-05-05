@@ -314,14 +314,28 @@ def commit_to_tree_oid(commit_oid: str) -> str:
     return commit.tree
 
 
+# takes a commit oid and fast forward into it.
+# require: commit has to be ahead of HEAD.
+def _fast_forward(commit_oid: str) -> None:
+    data.update_ref("HEAD", data.RefValue(symbolic=False, value=commit_oid), deref=True)
+    tree = commit_to_tree_oid(commit_oid)
+    read_tree(tree)
+
+
 # receive any commit oid to merge into, then merge it into HEAD
 def merge(commit_oid: str) -> None:
     head_oid = get_oid("HEAD")
     base_oid = get_merge_base(head_oid, commit_oid)
 
+    if base_oid == head_oid:
+        _fast_forward(commit_oid)
+        print(f"fast forward to {commit_oid}")
+        return
+
     head_tree_oid = commit_to_tree_oid(head_oid)
     other_tree_oid = commit_to_tree_oid(commit_oid)
     base_tree_oid = commit_to_tree_oid(base_oid)
+
 
     read_tree_merged(head_tree_oid, other_tree_oid, base_tree_oid)
 

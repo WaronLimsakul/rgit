@@ -311,3 +311,13 @@ def merge(commit_oid: str) -> None:
     head_tree_oid = head_commit.tree
 
     read_tree_merged(head_tree_oid, other_tree_oid)
+
+
+# for deleting MERGE_HEAD ref when merge
+def delete_ref(ref: str) -> None:
+    target_path = os.path.join(data.RGIT_DIR, ref)
+    try:
+        os.remove(target_path)
+    except OSError as error:
+        # if the file already doesn't exist, it should be fine
+        pass

@@ -100,6 +100,11 @@ def parse_args():
     fetch_parser.add_argument("path")
     fetch_parser.set_defaults(func=fetch)
 
+    push_parser = commands.add_parser("push")
+    push_parser.add_argument("remote_path")
+    push_parser.add_argument("branch")
+    push_parser.set_defaults(func=push)
+
     return parser.parse_args()
 
 
@@ -293,3 +298,8 @@ def fetch(args):
     assert os.path.exists(path)
     remote.fetch(path)
     print(f"fetch from {path}")
+
+
+def push(args):
+    remote.push(args.remote_path, args.branch)
+    print(f"push {args.branch} to {args.remote_path}")

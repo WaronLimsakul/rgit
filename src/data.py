@@ -152,3 +152,11 @@ def fetch_object_if_missing(remote_path: str, oid: str) -> None:
         os.path.join(remote_path, ".rgit", "objects", oid),
         os.path.join(RGIT_DIR, "objects", oid)
     )
+
+
+def push_object(remote_path: str, oid: str) -> None:
+    assert object_exists(oid), f"can't find oid {oid}"
+    shutil.copy(
+        os.path.join(RGIT_DIR, "objects", oid),
+        os.path.join(remote_path, ".rgit", "objects", oid)
+    )

@@ -6,6 +6,7 @@ from typing import Dict
 REMOTE_REFS_BASE = os.path.join("refs", "heads") # remote store in refs/heads/
 LOCAL_REFS_BASE = os.path.join("refs", "remote") # we will change to store here
 
+
 def _get_remote_refs(remote_path: str) -> Dict[str, data.RefValue]:
     with data.switch_rgit_dir(remote_path):
         return {ref: ref_val for ref, ref_val in data.iter_refs(prefix="heads")}
@@ -26,12 +27,30 @@ def fetch(remote_path: str) -> None:
     for oid in base.iter_objects_in_commits(ref_vals):
         data.fetch_object_if_missing(remote_path, oid)
 
+def _get_remote_objects(remote_path: str) -> set[str]:
+    refs_dict = _get_remote_refs(remote_path)
+    refvals_set = set()
+    for ref_val in refs_dict.values():
+        if ref_val.symbolic or not data.object_exists(ref_val.value):
+            continue
+        refvals_set.add(ref_val.value)
+
+    objects = set()
+    with data.switch_rgit_dir(remote_path):
+       for oid in base.iter_objects_in_commits(refvals_set):
+           objects.add(oid)
+    return objects
+
 
 def push(remote_path: str, branch_name: str) -> None:
     target_oid = base.get_oid(branch_name)
-    # be careful, set(str) will return {char, char, char, ..}
-    for obj_oid in base.iter_objects_in_commits({target_oid}):
-        data.push_object(remote_path, obj_oid)
+
+    remote_objects = _get_remote_objects(remote_path)
+    pushed_objects = {oid for oid in base.iter_objects_in_commits({target_oid})}
+    needed_objects = pushed_objects.difference(remote_objects)
+
+    for oid in needed_objects:
+        data.push_object(remote_path, oid)
 
     # update the branch ref in remote repo to point to our latest commit
     with data.switch_rgit_dir(remote_path):

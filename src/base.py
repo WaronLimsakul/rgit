@@ -52,11 +52,13 @@ def write_tree(dir_path: str = ".") -> str:
         tree_oid = data.hash_object(tree_content, type_="tree")
         return tree_oid
 
+
 # now we will only ignore the .rgit (and .git since it's annoying) dir
 def is_ignored(path: str) -> bool:
     return ".rgit" in path.split("/") or ".git" in path.split("/")
 
-# get oid -> go get each child in tree object and yield as tuple (type, oid, name)
+
+# get tree oid -> go get each child in tree object and yield as tuple (type, oid, name)
 def _iter_tree_entries(oid: str) -> Iterator[Tuple[str, str, str]]:
     if not oid:
         return
@@ -362,3 +364,30 @@ def get_merge_base(oid_a: str, oid_b: str) -> str:
             queue.append((parent, branch))
         visited[branch].add(oid)
     raise ValueError(f"couldn't find ancestor for {oid_a[:10]} {oid_b[:10]}")
+
+
+# receive list of commits and yield all objects it found when traverse
+# these commits. note that we don't visit remote repo in this function
+# but will yield the oid we foudn to the caller to let it fetch if missing
+def iter_objects_in_commits(commit_oids: set[str]) -> Iterator[str]:
+    visited = set() # every tree/blob we visit
+    # for get all objects from tree
+    def iter_objects_in_tree(tree_oid: str) -> Iterator[str]:
+        visited.add(tree_oid)
+        yield tree_oid
+        # this iter is very close to what we want
+        for type_, oid, _ in _iter_tree_entries(tree_oid):
+            if oid in visited: continue
+            if type_ == "tree":
+                yield from iter_objects_in_tree(oid)
+            else:
+                visited.add(oid)
+                yield oid
+
+    # iterate every commit we can touch (function guarantee no duplicate)
+    for commit_oid in iter_commits_and_parents(commit_oids):
+        yield commit_oid # let caller have a chance to fetch
+        commit = get_commit(commit_oid)
+        assert commit
+        if commit.tree in visited: continue
+        yield from iter_objects_in_tree(commit.tree)

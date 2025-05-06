@@ -138,3 +138,17 @@ def delete_ref(ref: str) -> None:
     except OSError as error:
         # if the file already doesn't exist, it should be fine
         pass
+
+
+def object_exists(oid: str) -> bool:
+    target_path = os.path.join(RGIT_DIR, "objects", oid)
+    return os.path.isfile(target_path)
+
+def fetch_object_if_missing(remote_path: str, oid: str) -> None:
+    if object_exists(oid):
+        return
+
+    shutil.copy(
+        os.path.join(remote_path, ".rgit", "objects", oid),
+        os.path.join(RGIT_DIR, "objects", oid)
+    )

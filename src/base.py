@@ -391,3 +391,10 @@ def iter_objects_in_commits(commit_oids: set[str]) -> Iterator[str]:
         assert commit
         if commit.tree in visited: continue
         yield from iter_objects_in_tree(commit.tree)
+
+
+def is_ancestor(old_oid: str, new_oid: str) -> bool:
+    for oid in iter_commits_and_parents({new_oid}):
+        if oid == old_oid:
+            return True
+    return False

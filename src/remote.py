@@ -42,7 +42,28 @@ def _get_remote_objects(remote_path: str) -> set[str]:
     return objects
 
 
+# only 2 cases we can push:
+# 1. remote repo doesn't have this branch
+# 2. remote repo has branch + the remote latest commit is ancestor of our latest commit
+def can_push(remote_path: str, branch_name: str) -> bool:
+    remote_refs = _get_remote_refs(remote_path)
+    branch_path = os.path.join("refs", "heads", branch_name)
+    if branch_path not in remote_refs:
+        return True
+
+    remote_oid = remote_refs[branch_path].value
+    if remote_oid == "": # in case remote is just init and "master" branch is ""
+        return True
+
+    our_oid = base.get_oid(branch_name)
+    return base.is_ancestor(old_oid=remote_oid, new_oid=our_oid)
+
+
 def push(remote_path: str, branch_name: str) -> None:
+    if not can_push(remote_path, branch_name):
+        print("cannot force push the repo")
+        return
+
     target_oid = base.get_oid(branch_name)
 
     remote_objects = _get_remote_objects(remote_path)

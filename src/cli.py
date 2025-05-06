@@ -6,11 +6,12 @@ import textwrap # lib for wrapping multi-line string
 import subprocess # lib for openning other processes
 from collections import defaultdict
 from typing import Dict
-from src import data, base, diff # if I want to import local lib, I have specify where it is
+from src import data, base, diff, remote # if I want to import local lib, I have specify where it is
 
 def main():
-    args = parse_args()
-    args.func(args)
+    with data.switch_rgit_dir("."):
+        args = parse_args()
+        args.func(args)
 
 def parse_args():
     parser = argparse.ArgumentParser() # parser object
@@ -94,6 +95,10 @@ def parse_args():
     merge_base_parser.add_argument("commit_oid_a", type=oid)
     merge_base_parser.add_argument("commit_oid_b", type=oid)
     merge_base_parser.set_defaults(func=merge_base)
+
+    fetch_parser = commands.add_parser("fetch")
+    fetch_parser.add_argument("path")
+    fetch_parser.set_defaults(func=fetch)
 
     return parser.parse_args()
 
@@ -277,6 +282,13 @@ def merge(args):
     base.merge(args.commit)
     print(f"merge commit {args.commit}")
 
+
 def merge_base(args):
     base_oid = base.get_merge_base(args.commit_oid_a, args.commit_oid_b)
     print(f"the base is commit {base_oid[:10]}")
+
+
+def fetch(args):
+    path = args.path
+    assert os.path.exists(path)
+    remote.fetch(path)

@@ -314,7 +314,7 @@ def commit_to_tree_oid(commit_oid: str) -> str:
     return commit.tree
 
 
-# takes a commit oid and fast forward into it.
+# takes a commit oid and  fast-forward into it.
 # require: commit has to be ahead of HEAD.
 def _fast_forward(commit_oid: str) -> None:
     data.update_ref("HEAD", data.RefValue(symbolic=False, value=commit_oid), deref=True)
@@ -329,7 +329,7 @@ def merge(commit_oid: str) -> None:
 
     if base_oid == head_oid:
         _fast_forward(commit_oid)
-        print(f"fast forward to {commit_oid}")
+        print(f"Fast-forward to {commit_oid}")
         return
 
     head_tree_oid = commit_to_tree_oid(head_oid)
@@ -361,5 +361,4 @@ def get_merge_base(oid_a: str, oid_b: str) -> str:
         for parent in commit.parents:
             queue.append((parent, branch))
         visited[branch].add(oid)
-
     raise ValueError(f"couldn't find ancestor for {oid_a[:10]} {oid_b[:10]}")

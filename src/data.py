@@ -4,18 +4,31 @@ import sys
 import shutil
 from typing import Iterator, Tuple, Set
 from collections import namedtuple
+from contextlib import contextmanager
 
-RGIT_DIR = ".rgit"
-OBJECTS_DIR = f"{RGIT_DIR}/objects"
-HEAD_FILE = f"{RGIT_DIR}/HEAD"
+RGIT_DIR = "" # will be set in cli.main()
 SYMREF_PREFIX = "ref: "
 
 # a quick way to write a class with only attributes
 RefValue = namedtuple("RefValue", ["symbolic", "value"])
 
+
+@contextmanager # only ONE function below this line is wrapped
+# Get the path that rgit dir is, then switch to that path/.rgit temporarily
+# (for remote-related task)
+def switch_rgit_dir(path: str) -> Iterator[None]:
+    global RGIT_DIR
+    old_dir = RGIT_DIR
+    RGIT_DIR = os.path.join(path, ".rgit")
+    try:
+        yield
+    finally:
+        RGIT_DIR = old_dir
+
+
 def init():
     os.makedirs(RGIT_DIR)
-    os.makedirs(OBJECTS_DIR)
+    os.makedirs(os.path.join(RGIT_DIR, "objects"))
 
 
 def clear():
@@ -29,7 +42,7 @@ def hash_object(file_content: bytes, type_: str ="blob") -> str:
     hasher = hashlib.sha1(file_content) # create hasher + put message to hash
     object_id = hasher.hexdigest() # hash
 
-    target_path = f"{OBJECTS_DIR}/{object_id}"
+    target_path = f"{RGIT_DIR}/objects/{object_id}"
     with open(target_path, "wb") as file:
         # prepend the object type
         file.write(file_content)
@@ -40,7 +53,7 @@ def hash_object(file_content: bytes, type_: str ="blob") -> str:
 # get the oid and expected type, return if found + has expected type
 def get_object_content(oid: str, expected: str | None = "blob") -> bytes:
     # read in binary mode
-    with open(f"{OBJECTS_DIR}/{oid}", 'rb') as file:
+    with open(f"{RGIT_DIR}/objects/{oid}", 'rb') as file:
 
         # get the type first
         # this function divide bytes into 3 parts, before - first_sep - after

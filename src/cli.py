@@ -107,7 +107,7 @@ def parse_args():
 
     add_parser = commands.add_parser("add")
     # takes >= 1 argument, wrap into list
-    add_parser.add_argument("files", nargs="+")
+    add_parser.add_argument("paths", nargs="+")
     add_parser.set_defaults(func=add)
 
     return parser.parse_args()
@@ -311,5 +311,4 @@ def push(args):
 
 
 def add(args):
-    base.add(args.files)
-    print(f"staged {args.files}")
+    base.add(args.paths)

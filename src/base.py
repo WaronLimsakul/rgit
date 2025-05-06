@@ -400,16 +400,34 @@ def is_ancestor(old_oid: str, new_oid: str) -> bool:
     return False
 
 
+
+
 # receive a path to file, write the file into object
 # then write index: path -> oid
-def add(file_names: list[str]) -> None:
+def add(paths: list[str]) -> None:
+    def add_file(file_path: str) -> None:
+        with open(file_path, "rb") as file:
+            content = file.read()
+
+        oid = data.hash_object(content, type_="blob")
+        index[file_path] = oid
+
+    def add_dir(dir_path: str) -> None:
+        for root, _, file_names in os.walk(dir_path):
+            for file_name in file_names:
+                file_path = os.path.relpath(os.path.join(root, file_name))
+                if is_ignored(file_path): continue
+                add_file(file_path)
+
     with data.get_index() as index:
-        for file_name in file_names:
-            if not os.path.isfile(file_name):
-                print(f"path {file_name} does not exist")
+        for path in paths:
+            if not os.path.exists(path):
+                print(f"path {path} does not exist")
                 continue
 
-            with open(file_name, "rb") as file:
-                file_content = file.read()
-            oid = data.hash_object(file_content, type_="blob")
-            index[file_name] = oid
+            if os.path.isfile(path):
+                add_file(path)
+            elif os.path.isdir(path):
+                add_dir(path)
+            else:
+                print(f"{path} is neither file nor directory")

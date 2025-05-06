@@ -22,8 +22,5 @@ def fetch(remote_path: str) -> None:
         if not ref_val.symbolic:
             ref_vals.add(ref_val.value)
 
-    times = 0
     for oid in base.iter_objects_in_commits(ref_vals):
         data.fetch_object_if_missing(remote_path, oid)
-        times += 1
-    print(f"fetch {times} times")

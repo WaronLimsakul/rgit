@@ -292,3 +292,4 @@ def fetch(args):
     path = args.path
     assert os.path.exists(path)
     remote.fetch(path)
+    print(f"fetch from {path}")

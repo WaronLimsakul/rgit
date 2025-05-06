@@ -398,3 +398,18 @@ def is_ancestor(old_oid: str, new_oid: str) -> bool:
         if oid == old_oid:
             return True
     return False
+
+
+# receive a path to file, write the file into object
+# then write index: path -> oid
+def add(file_names: list[str]) -> None:
+    with data.get_index() as index:
+        for file_name in file_names:
+            if not os.path.isfile(file_name):
+                print(f"path {file_name} does not exist")
+                continue
+
+            with open(file_name, "rb") as file:
+                file_content = file.read()
+            oid = data.hash_object(file_content, type_="blob")
+            index[file_name] = oid

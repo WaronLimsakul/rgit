@@ -2,7 +2,8 @@ import os
 import hashlib
 import sys
 import shutil
-from typing import Iterator, Tuple, Set
+import json
+from typing import Iterator, Tuple, Set, Generator, Dict
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -160,3 +161,19 @@ def push_object(remote_path: str, oid: str) -> None:
         os.path.join(RGIT_DIR, "objects", oid),
         os.path.join(remote_path, ".rgit", "objects", oid)
     )
+
+
+# yield index file as a dict, let the caller deal with it
+# and then dump it back to save.
+@contextmanager
+def get_index() -> Iterator[Dict[str, str]]:
+    index = {} # in case we don't have .rgit/index
+    index_path = os.path.join(RGIT_DIR, "index")
+    if os.path.isfile(index_path):
+        with open(index_path, "r") as index_file:
+            index = json.load(index_file) # load into a dict
+
+    yield index
+
+    with open(index_path, "w") as index_file:
+        json.dump(index, index_file) # rewrite the file

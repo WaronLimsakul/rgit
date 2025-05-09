@@ -3,13 +3,15 @@ import os
 import itertools
 import string
 from src import data, diff
-from typing import Dict, Iterator, Tuple
+from typing import Dict, Iterator, Tuple, Union
 from collections import namedtuple, deque
+from pathlib import Path
 
 
 # a lazy way to define a class with just attributes
 Commit = namedtuple("Commit", ["tree", "parents", "message"])
 type Tree = Dict[str, str] # path -> oid
+type NestedDict = Dict[str, Union[str, "NestedDict"]]
 
 
 def init() -> None:
@@ -23,34 +25,47 @@ def init() -> None:
 # type oid name
 # ...
 # of the files object inside
-def write_tree(dir_path: str = ".") -> str:
-    # listdir will just give list of file name in dir
-    # scandir will give list of file-like object I can directly call method on
-    # but I have to close the list. so I will use with ... as ... to auto close
-    with os.scandir(dir_path) as ls:
-        tree_content_list = [] # list of string
-        for file in ls:
-            type_ = "blob" # have to add _ because it will conflict with keyword
-            full_path = f"{dir_path}/{file.name}"
-            if is_ignored(full_path):
-                continue
-            elif file.is_file():
-                with open(full_path, 'rb') as f:
-                    oid = data.hash_object(f.read())
-            elif file.is_dir():
-                type_ = "tree"
-                oid = write_tree(full_path)
-            else:
-                raise TypeError(f"file {file.name} is neither file nor directory")
+def write_tree():
+    tree_dict = {} # a dict that nested like tree
+    with data.get_index() as index:
+        for path, oid in index.items():
+            file_name = os.path.basename(path)
+            dir_name = os.path.dirname(path)
+            traverse_list = Path(dir_name).parts
 
-            tree_content_list.append((type_, oid, file.name))
-        tree_content = "".join(
-            f"{type_} {oid} {file_name}\n"
-            for (type_, oid, file_name)
-            in sorted(tree_content_list)
-        ).encode()
-        tree_oid = data.hash_object(tree_content, type_="tree")
+            cur = tree_dict
+            for dir in traverse_list:
+                if dir not in cur:
+                    cur[dir] = {}
+                cur = cur[dir]
+            cur[file_name] = oid
+    """
+    Goal: receive dict tree -> return tree oid
+    0. have tree content waiting
+    1. iterate items
+    2. check if it's file or directory
+    3. if file (oid string),
+        - get the oid, put in the tree content
+    4. if dir,
+        - jump into tree, call that again
+        - get return oid from recursion use that to write tree content
+    5. return the tree content
+    """
+    def write_tree_from_dict(tree_dict: NestedDict) -> str:
+        tree_entries = []
+        for name, value in tree_dict.items():
+            if isinstance(value, str):
+                type_ = "blob"
+                oid = value
+            else:
+                type_ = "tree"
+                oid = write_tree_from_dict(value)
+            tree_entries.append((type_, oid, name))
+            tree_content = "".join(f"{type_} {oid} {name}\n"
+                for type_, oid, name in sorted(tree_entries))
+        tree_oid = data.hash_object(tree_content.encode(), type_="tree")
         return tree_oid
+    return write_tree_from_dict(tree_dict)
 
 
 # now we will only ignore the .rgit (and .git since it's annoying) dir
@@ -109,12 +124,12 @@ def _empty_current_dir():
             if is_ignored(path):
                 continue
 
-        try:
-            os.rmdir(path)
-        except (FileNotFoundError, OSError):
-            # some dir has ignored files, we can't delete the non-empty dir
-            # so we just pass
-            pass
+            try:
+                os.rmdir(path)
+            except (FileNotFoundError, OSError):
+                # some dir has ignored files, we can't delete the non-empty dir
+                # so we just pass
+                pass
 
 # get message, write tree then hash the commit object
 def commit(message: str) -> str:

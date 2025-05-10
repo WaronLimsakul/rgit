@@ -233,6 +233,11 @@ def branch(args):
         print(f"create branch {args.branch_name} at {args.start_point[:10]}")
 
 
+# we will show "changed + staged" file
+# and "changed" but not staged file separately
+# "changed + staged": HEAD-index diff
+# "changed + not staged": index-cwd diff
+# note that sometimes, one file can be in both reports
 def status(args):
     current_branch = base.get_current_branch()
     if current_branch:
@@ -248,12 +253,19 @@ def status(args):
     latest_commit_oid = base.get_oid("HEAD")
     latest_commit = base.get_commit(latest_commit_oid)
     assert latest_commit is not None
-    target_tree = base.get_tree(latest_commit.tree)
+
+    index_tree = base.get_index_tree()
+    head_tree = base.get_tree(latest_commit.tree)
     working_tree = base.get_working_tree()
 
-    print("\nChanges to be commited\n")
-    for (path, change_type) in diff.iter_changed_files(working_tree, target_tree):
-        print(f"{change_type}: {path}")
+    print("\nChanges to be commited:")
+    for (path, change_type) in diff.iter_changed_files(index_tree, head_tree):
+        print(f"    {change_type}: {path}")
+
+    print("\nChanged not staged for commit:")
+    for (path, change_type) in diff.iter_changed_files(working_tree, index_tree):
+        print(f"    {change_type}: {path}")
+
 
 
 def reset(args):

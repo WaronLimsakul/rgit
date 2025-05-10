@@ -476,3 +476,8 @@ def add(paths: list[str]) -> None:
                 add_dir(path)
             else:
                 print(f"{path} is neither file nor directory")
+
+
+def get_index_tree() -> Dict[str, str]:
+    with data.get_index() as index:
+        return index

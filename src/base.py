@@ -97,16 +97,40 @@ def get_tree(oid: str, base_path: str = "") -> Tree:
             res.update(get_tree(child_oid, child_path + "/"))
         else:
             raise ValueError(f"child with oid {oid} has invalid type {child_type}")
-
     return res
 
-# get the oid of a tree, then write cwd according to the tree it gets
-def read_tree(oid: str) -> None:
+
+# get the oid of a tree, then update index
+# and (optinally) write cwd according to the tree it gets
+# workflow: tree -> index -> cwd
+# write tree to index
+# - open index and clear it
+# - we have function get_tree that return dict that looks like our index
+# - just update index according to the tree we have
+# - if update_cwd, write cwd from index
+def read_tree(oid: str, update_cwd: bool = False) -> None:
+    with data.get_index() as index:
+        index.clear()
+        index.update(get_tree(oid))
+        if update_cwd:
+            _index_write_cwd(index)
+
+
+# from index, write cwd
+# - empty cwd
+# - go through index items
+# - makedirs in each item (exist_ok=True)
+# - write the file
+def _index_write_cwd(index: Dict[str, str]) -> None:
     _empty_current_dir()
-    for (path, oid) in get_tree(oid, base_path="./").items():
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "wb") as obj:
-            obj.write(data.get_object_content(oid))
+    for path, oid in index.items():
+        path = os.path.join(".", path) # not sure if the stored path is relative
+        dir_name = os.path.dirname(path)
+        os.makedirs(dir_name, exist_ok=True)
+
+        content = data.get_object_content(oid, expected="blob")
+        with open(path, "wb") as file:
+            file.write(content)
 
 
 # like name said, empty the current dir (ignore .rgit)
@@ -205,7 +229,7 @@ def checkout(commit: str) -> None:
     if not commit_data:
         raise FileNotFoundError(f"commit {commit_oid} from input {commit} not found")
 
-    read_tree(commit_data.tree)
+    read_tree(commit_data.tree, update_cwd= True)
     # deref=False because we want HEAD to be able to be symbolic (point to a branch, not oid)
     data.update_ref("HEAD", data.RefValue(symbolic=symbolic, value=commit), deref=False)
 
@@ -308,8 +332,14 @@ def get_working_tree(start_point: str = ".") -> Tree:
     return working_tree
 
 
-# receive 2 tree oids and a base tree oid, do 3-way merge and apply to working directory
-def read_tree_merged(head_tree_oid: str, other_tree_oid: str, base_tree_oid: str) -> None:
+# receive 2 tree oids and a base tree oid, do 3-way merge and update index
+# optionally, apply to working directory
+def read_tree_merged(
+    head_tree_oid: str,
+    other_tree_oid: str,
+    base_tree_oid: str,
+    update_cwd: bool = False
+) -> None:
     _empty_current_dir()
 
     head_tree = get_tree(head_tree_oid)
@@ -317,12 +347,12 @@ def read_tree_merged(head_tree_oid: str, other_tree_oid: str, base_tree_oid: str
     base_tree = get_tree(base_tree_oid)
 
     merged_tree: Tree = diff.merge_trees(head_tree, other_tree, base_tree)
-    for path, oid in merged_tree.items():
-        dir = os.path.dirname(path)
-        os.makedirs(f"./{dir}", exist_ok=True) # add ./ to let os know it's relative
-        file_content = data.get_object_content(oid)
-        with open(path, "wb") as file:
-            file.write(file_content)
+    # update index first
+    with data.get_index() as index:
+        index.clear()
+        index.update(merged_tree)
+        if update_cwd:
+            _index_write_cwd(index)
 
 
 def commit_to_tree_oid(commit_oid: str) -> str:
@@ -336,7 +366,7 @@ def commit_to_tree_oid(commit_oid: str) -> str:
 def _fast_forward(commit_oid: str) -> None:
     data.update_ref("HEAD", data.RefValue(symbolic=False, value=commit_oid), deref=True)
     tree = commit_to_tree_oid(commit_oid)
-    read_tree(tree)
+    read_tree(tree, update_cwd=True)
 
 
 # receive any commit oid to merge into, then merge it into HEAD
@@ -354,7 +384,7 @@ def merge(commit_oid: str) -> None:
     base_tree_oid = commit_to_tree_oid(base_oid)
 
 
-    read_tree_merged(head_tree_oid, other_tree_oid, base_tree_oid)
+    read_tree_merged(head_tree_oid, other_tree_oid, base_tree_oid, update_cwd=True)
 
     data.update_ref("MERGE_HEAD", data.RefValue(symbolic=False, value=commit_oid))
     commit(f"merge commit {commit_oid[:10]}")

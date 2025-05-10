@@ -28,6 +28,7 @@ def diff_trees(tree_to: Tree, tree_from: Tree) -> bytes:
             msg += diff_blobs(oid_to, oid_from, path)
     return msg
 
+
 def diff_blobs(blob_to_oid: str | None, blob_from_oid: str | None, path: str | None ="blob") -> bytes:
     blob_to_content = data.get_object_content(blob_to_oid) if blob_to_oid else b""
     blob_from_content = data.get_object_content(blob_from_oid) if blob_from_oid else b""
@@ -56,12 +57,14 @@ def iter_changed_files(tree_to: Tree, tree_from: Tree) -> Iterator[Tuple[str, st
         elif oid_to is None: yield (path, "deleted")
         else: yield (path, "modified")
 
+
 def _temp_file(oid: str | None) -> IO[bytes]:
     file = TempFile()
     content = data.get_object_content(oid) if oid else b""
     file.write(content)
     file.flush()
     return file
+
 
 def merge_blobs(
     head_oid: str | None,

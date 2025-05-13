@@ -2,18 +2,6 @@
 
 A reimplementation of Git's core functionality in Python.
 
-## What?
-
-rgit is a lightweight Python implementation of Git that focuses on reproducing the core functionality of the original version control system. This project includes implementations of Git's fundamental components such as:
-
-- Object storage (blobs, trees, commits)
-- Branching and tagging
-- Indexing (staging area)
-- Basic remote operations (fetch/push)
-- Merging with conflict resolution
-- Diffing and patching
-- Common Git commands (add, commit, checkout, etc.)
-
 ## Why?
 
 This project was created to gain a deeper understanding of how Git works internally. By reimplementing Git's core features from scratch, it provides insight into:
@@ -32,8 +20,9 @@ Instead of just using Git as a black box, rgit helps you see the internals at wo
 Clone the repository and install it:
 
 ```bash
-git clone https://github.com/yourusername/rgit.git
+git clone https://github.com/WaronLimsakul/rgit.git
 cd rgit
+pip install -r requirements.txt  # for dev
 pip install -e .
 ```
 

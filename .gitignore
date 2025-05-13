@@ -2,5 +2,6 @@ rgit.egg-info/
 .rgit/
 __pycache__/
 *.md
+!README.md
 venv/
 .mypy_cache/

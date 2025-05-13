@@ -111,6 +111,10 @@ def parse_args():
     add_parser.add_argument("paths", nargs="+")
     add_parser.set_defaults(func=add)
 
+    revert_parser = commands.add_parser("revert")
+    revert_parser.add_argument("commit", type=oid)
+    revert_parser.set_defaults(func=revert)
+
     return parser.parse_args()
 
 
@@ -344,3 +348,8 @@ def push(args):
 
 def add(args):
     base.add(args.paths)
+
+
+def revert(args):
+    base.revert(args.commit)
+    print(f"revert to {args.commit[:10]}")

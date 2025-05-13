@@ -480,3 +480,11 @@ def add(paths: list[str]) -> None:
 def get_index_tree() -> Dict[str, str]:
     with data.get_index() as index:
         return index
+
+
+# just get commit -> read tree = update index + apply to cwd -> commit
+def revert(commit_oid: str) -> None:
+    target_commit = get_commit(commit_oid)
+    assert commit is not None
+    read_tree(target_commit.tree, update_cwd=True)
+    commit(f"revert to {commit_oid[:10]}")

@@ -114,7 +114,7 @@ rgit k  # requires graphviz
 
 ## Dependencies
 
-- Python 3.6+
+- Python 3.10+
 - Standard libraries: os, hashlib, sys, etc.
 - External: graphviz (for visualization with the `k` command)
 

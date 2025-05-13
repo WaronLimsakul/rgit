@@ -84,7 +84,8 @@ def parse_args():
     show_parser.set_defaults(func=show)
 
     diff_parser = commands.add_parser("diff")
-    diff_parser.add_argument("commit", default="@", nargs="?", type=oid)
+    diff_parser.add_argument("--cached", action="store_true")
+    diff_parser.add_argument("commit", nargs="?", type=oid)
     diff_parser.set_defaults(func=show_diff)
 
     merge_parser = commands.add_parser("merge")
@@ -289,13 +290,32 @@ def show(args):
         sys.stdout.buffer.flush()
         sys.stdout.buffer.write(diff_msg)
 
-def show_diff(args):
-    target_commit = base.get_commit(args.commit)
-    assert target_commit is not None
-    target_tree = base.get_tree(target_commit.tree)
-    working_tree = base.get_working_tree()
 
-    diff_msg = diff.diff_trees(working_tree, target_tree)
+# if --cached: we diff index with HEAD or provided commit
+# else: we diff cwd with index or provided commit
+def show_diff(args):
+    def commit_to_tree_oid(target_oid: str) -> str:
+        target_commit = base.get_commit(target_oid)
+        assert target_commit is not None
+        return target_commit.tree
+
+    if args.cached:
+        index_tree_oid = base.write_tree()
+        main_tree = base.get_tree(index_tree_oid)
+        if not args.commit:
+            target_oid = base.get_oid("HEAD")
+        else: target_oid = args.commit
+        target_tree_oid = commit_to_tree_oid(target_oid)
+    else:
+        main_tree = base.get_working_tree()
+        if not args.commit:
+            target_tree_oid = base.write_tree()
+        else:
+            target_tree_oid = commit_to_tree_oid(args.commit)
+
+    target_tree = base.get_tree(target_tree_oid)
+
+    diff_msg = diff.diff_trees(main_tree, target_tree)
     sys.stdout.buffer.flush()
     sys.stdout.buffer.write(diff_msg)
 

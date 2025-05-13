@@ -3,7 +3,7 @@ import os
 import itertools
 import string
 from src import data, diff
-from typing import Dict, Iterator, Tuple, Union
+from typing import Dict, Iterator, Tuple, Union, cast
 from collections import namedtuple, deque
 from pathlib import Path
 
@@ -25,8 +25,8 @@ def init() -> None:
 # type oid name
 # ...
 # of the files object inside
-def write_tree():
-    tree_dict = {} # a dict that nested like tree
+def write_tree() -> str:
+    tree_dict: NestedDict = {} # a dict that nested like tree
     with data.get_index() as index:
         for path, oid in index.items():
             file_name = os.path.basename(path)
@@ -35,9 +35,8 @@ def write_tree():
 
             cur = tree_dict
             for dir in traverse_list:
-                if dir not in cur:
-                    cur[dir] = {}
-                cur = cur[dir]
+                # have to explicitly cast to NestedDict to avoid mypy error
+                cur = cast(NestedDict, cur.setdefault(dir, {}))
             cur[file_name] = oid
     """
     Goal: receive dict tree -> return tree oid

@@ -169,6 +169,7 @@ def commit(message: str) -> str:
     other_parent_oid = data.get_ref_value("MERGE_HEAD")
     if other_parent_oid:
         commit_content += f"parent {other_parent_oid.value}\n"
+        data.delete_ref("MERGE_HEAD")
 
     commit_content += "\n"
     commit_content += f"{message}\n"
@@ -333,25 +334,29 @@ def get_working_tree(start_point: str = ".") -> Tree:
 
 # receive 2 tree oids and a base tree oid, do 3-way merge and update index
 # optionally, apply to working directory
+# then return a list of conflict files
 def read_tree_merged(
     head_tree_oid: str,
     other_tree_oid: str,
     base_tree_oid: str,
     update_cwd: bool = False
-) -> None:
+) -> list[str]:
     _empty_current_dir()
 
     head_tree = get_tree(head_tree_oid)
     other_tree = get_tree(other_tree_oid)
     base_tree = get_tree(base_tree_oid)
 
-    merged_tree: Tree = diff.merge_trees(head_tree, other_tree, base_tree)
+    # merged_tree is Tree, conflict_files is list[str]
+    merged_tree, conflict_files = diff.merge_trees(head_tree, other_tree, base_tree)
     # update index first
     with data.get_index() as index:
         index.clear()
         index.update(merged_tree)
         if update_cwd:
             _index_write_cwd(index)
+
+    return conflict_files
 
 
 def commit_to_tree_oid(commit_oid: str) -> str:
@@ -383,11 +388,19 @@ def merge(commit_oid: str) -> None:
     base_tree_oid = commit_to_tree_oid(base_oid)
 
 
-    read_tree_merged(head_tree_oid, other_tree_oid, base_tree_oid, update_cwd=True)
+    conflict_files = read_tree_merged(
+        head_tree_oid, other_tree_oid,
+        base_tree_oid, update_cwd=True)
 
     data.update_ref("MERGE_HEAD", data.RefValue(symbolic=False, value=commit_oid))
-    commit(f"merge commit {commit_oid[:10]}")
-    data.delete_ref("MERGE_HEAD")
+    if not conflict_files:
+        commit(f"merge commit {commit_oid[:10]}")
+        print(f"merge commit {commit_oid[:10]}")
+    else:
+        print("Merge has conflict. Please solve the conflict and commit")
+        print("Conflict files:")
+        for path in conflict_files:
+            print(path)
 
 
 
@@ -485,6 +498,6 @@ def get_index_tree() -> Dict[str, str]:
 # just get commit -> read tree = update index + apply to cwd -> commit
 def revert(commit_oid: str) -> None:
     target_commit = get_commit(commit_oid)
-    assert commit is not None
+    assert target_commit is not None
     read_tree(target_commit.tree, update_cwd=True)
     commit(f"revert to {commit_oid[:10]}")

@@ -66,11 +66,16 @@ def _temp_file(oid: str | None) -> IO[bytes]:
     return file
 
 
+# check if the content of the merge file show conflict by diff3
+def check_conflict(content :bytes) -> bool:
+    return b"<<<<<<<" in content and b">>>>>>>" in content
+
+
 def merge_blobs(
     head_oid: str | None,
     other_oid: str | None,
     base_oid: str | None
-) -> str:
+) -> Tuple[str, bool]:
     with _temp_file(head_oid) as head_file, \
          _temp_file(other_oid) as other_file, \
          _temp_file(base_oid) as base_file:
@@ -84,13 +89,17 @@ def merge_blobs(
             merged_content, _ = process.communicate()
 
         merged_oid = data.hash_object(merged_content, type_="blob")
-        return merged_oid
+        conflict = check_conflict(merged_content)
+        return (merged_oid, conflict)
 
 
-def merge_trees(tree_to: Tree, tree_from: Tree, tree_base: Tree) -> Tree:
+def merge_trees(tree_to: Tree, tree_from: Tree, tree_base: Tree) -> Tuple[Tree, list[str]]:
     merged_tree = {}
+    conflict_files = []
     for path, blob_to, blob_from, blob_base in compare_trees(tree_to, tree_from, tree_base):
-        merged_blob_oid = merge_blobs(blob_to, blob_from, blob_base)
+        merged_blob_oid, has_conflict = merge_blobs(blob_to, blob_from, blob_base)
         assert path
         merged_tree[path] = merged_blob_oid
-    return merged_tree
+        if has_conflict:
+            conflict_files.append(path)
+    return (merged_tree, conflict_files)

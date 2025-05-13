@@ -326,7 +326,7 @@ def show_diff(args):
 
 def merge(args):
     base.merge(args.commit)
-    print(f"merge commit {args.commit}")
+    # print(f"merge commit {args.commit}")
 
 
 def merge_base(args):
